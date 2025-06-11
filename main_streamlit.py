@@ -1,5 +1,5 @@
 import streamlit as st
-from oscalc import double_set, set_cards, parseR, quick_solutions
+from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
 st.title("OS Calculator")
 

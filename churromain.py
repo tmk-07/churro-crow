@@ -1,5 +1,5 @@
-from oscalc import double_set, find_solutions, set_cards, parseR, quick_solutions
-from inputs import load_from_user
+from churrooscalc import double_set, find_solutions, set_cards, parseR, quick_solutions
+from churroinputs import load_from_user
 
 doubleSet, selectMethod, setName, restriction, colorMat, operationMat, enterGoal, solutionsWanted = load_from_user()
 
