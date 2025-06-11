@@ -1,0 +1,49 @@
+import streamlit as st
+from oscalc import double_set, set_cards, parseR, quick_solutions
+
+st.title("OS Calculator")
+
+# Inputs
+doubleSet = st.text_input("First, establish variations. If doubleset, enter it. Else N")
+
+selectMethod = st.selectbox("What would you like to do?",
+                            ['1 - Calculate a solution set',
+                             '2 - Calculate a restriction',
+                             '3 - Find a solution set',
+                             '4 - Find a restriction/solution set (Not implemented)'])
+
+# Defaults for all inputs
+setName = ""
+restriction = ""
+colorMat = ""
+operationMat = ""
+enterGoal = 0
+solutionsWanted = 1
+
+if selectMethod.startswith('1'):
+    setName = st.text_input("Enter the set expression. Example: RnG-B")
+
+elif selectMethod.startswith('2'):
+    restriction = st.text_input("Enter restriction statement. Example: RnGcB'=G")
+
+elif selectMethod.startswith('3'):
+    colorMat = st.text_input("Enter color cubes. Example: BGYY")
+    operationMat = st.text_input("Enter operation cubes. Example: nnu'-")
+    enterGoal = st.number_input("What is the goal?", min_value=0, step=1)
+    solutionsWanted = st.number_input("How many solutions wanted?", min_value=1, step=1)
+
+if st.button("Run calculation"):
+    output = ""
+    if doubleSet != "N":
+        output += double_set(doubleSet) + "\n"
+
+    if selectMethod.startswith('1'):
+        output += set_cards(setName, testV=True) + "\n"
+    elif selectMethod.startswith('2'):
+        output += parseR(restriction, testV=True) + "\n"
+    elif selectMethod.startswith('3'):
+        output += quick_solutions(colorMat, operationMat, enterGoal, solutionsWanted) + "\n"
+    else:
+        output += "Option 4 not implemented yet."
+
+    st.text(output)
