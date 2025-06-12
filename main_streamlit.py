@@ -35,15 +35,15 @@ elif selectMethod.startswith('3'):
 if st.button("Run calculation"):
     output = ""
     if doubleSet != "N":
-        output += double_set(doubleSet) + "\n"
+        output += double_set(doubleSet)
 
     if selectMethod.startswith('1'):
-        output += set_cards(setName, testV=True) + "\n"
+        output = set_cards(setName, testV=True)
     elif selectMethod.startswith('2'):
-        output += parseR(restriction, testV=True) + "\n"
+        output = parseR(restriction, testV=True)
     elif selectMethod.startswith('3'):
-        output += quick_solutions(colorMat, operationMat, enterGoal, solutionsWanted) + "\n"
+        output = quick_solutions(colorMat, operationMat, enterGoal, solutionsWanted)
     else:
-        output += "Option 4 not implemented yet."
+        output = "Option 4 not implemented yet."
 
     st.write(output)
