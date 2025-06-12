@@ -1,7 +1,7 @@
 import streamlit as st
 from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
-st.title("OS Calculator 1.32")
+st.title("OS Calculator 1.33")
 
 # Inputs
 doubleSet = st.text_input("First, establish variations. If doubleset, enter it. Else N")
