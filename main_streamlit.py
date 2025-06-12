@@ -1,7 +1,7 @@
 import streamlit as st
 from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
-st.title("OS Calculator v1.6")
+st.title("OS Calculator v1.71")
   
 # Inputs
 doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none. Example: (RnB)'")
@@ -46,5 +46,4 @@ if st.button("Run calculation"):
             output = quick_solutions(colorMat, operationMat, enterGoal, solutionsWanted)
         else:
             output = "Option 4 not implemented yet."
-        st.success("done.")
         st.markdown(output, unsafe_allow_html=False)
