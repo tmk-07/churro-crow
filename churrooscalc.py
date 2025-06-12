@@ -160,23 +160,6 @@ def get_set(token): # returns the set of cards given an expression
         print(f"Warning: Unknown token {token}")
         return []  # or raise an error
 
-# def calcExp(tokens): # outdated - doesn't solve parentheses
-    ops = ('u','n','-')
-    while "'" in tokens:
-        i = tokens.index("'")
-        if i is None:
-            break   
-        expHold = prime(get_set(tokens[i-1]))
-        tokens[i-1 : i+1] = ['X'] 
-        computed_sets['X'] = expHold
-    while any(op in tokens for op in ops):
-        i = next((idx for idx, tok in enumerate(tokens) if tok in ops), None)
-        expHold = op_map.get(tokens[i])(get_set(tokens[i-1]),get_set(tokens[i+1]))
-        tokens[i-1 : i+2] = ['X']      # inserts the single token 'X'
-        computed_sets['X'] = expHold
-    for token in tokens:
-        return computed_sets[token]
-
 def new_token(): # creates tokens for new expressions generated
     global token_counter
     token_counter += 1
@@ -271,17 +254,6 @@ def set_cards(expr, testV=False, doubleWork=False): # returns the set of cards g
         return mySet
     print(f"Solution set has {len(mySet)} cards: {list(mySet)}")
 
-def minus_parenthesis(tokens, expressions): # adds parenthesis around next expression after any minuses
-    # Always add original
-    expressions.add(' '.join(tokens))
-
-    # Look for any '-' with room for 3 elements after it
-    for i in range(len(tokens) - 3):
-        if tokens[i] == '-':
-            # Wrap tokens[i+1:i+4] in parentheses
-            new_tokens = tokens[:i+1] + ['('] + tokens[i+1:i+4] + [')'] + tokens[i+4:]
-            expressions.add(' '.join(new_tokens))
-
 def add_primes(tokens, num_primes): # adds primes in all valid positions
     if num_primes == 0:
         return {tuple(tokens)}
@@ -306,12 +278,12 @@ def add_primes(tokens, num_primes): # adds primes in all valid positions
 
     return variants
 
-def generate_prime_variants(tokens, num_primes): # adds parentheses for each of those prime positions
-    """Generate all prime variants with expanding parentheses"""
+def generate_prime_variants(tokens, num_primes, restriction_ops={'c', '='}):
+    """Generate all prime variants while avoiding parentheses around restriction ops"""
     base_variants = set()
     candidate_indices = [i for i, t in enumerate(tokens) 
                         if t in mapping or t == ')']
-    
+
     # First generate basic prime placements
     for combo in combinations_with_replacement(candidate_indices, num_primes):
         new_tokens = tokens.copy()
@@ -326,7 +298,7 @@ def generate_prime_variants(tokens, num_primes): # adds parentheses for each of 
         
         base_variants.add(''.join(new_tokens))
     
-    # Now generate parenthesized expansions for each prime
+    # Now generate parenthesized expansions, skipping restriction ops
     expanded_variants = set()
     for variant in base_variants:
         expanded_variants.add(variant)  # Keep original
@@ -371,6 +343,10 @@ def generate_prime_variants(tokens, num_primes): # adds parentheses for each of 
                 else:
                     end += 1
             
+            # Skip if this would parenthesize a restriction operator
+            if any(op in variant[start:end] for op in restriction_ops):
+                continue
+                
             # Create new variant with expanded parentheses
             new_variant = (
                 variant[:start] + 
@@ -380,6 +356,22 @@ def generate_prime_variants(tokens, num_primes): # adds parentheses for each of 
             expanded_variants.add(new_variant)
     
     return expanded_variants
+
+def minus_parenthesis(tokens, expressions, restriction_ops={'c', '='}):
+    """Add parentheses while avoiding wrapping restriction operators"""
+    # Always add original
+    expressions.add(' '.join(tokens))
+
+    # Look for any '-' with room for 3 elements after it
+    for i in range(len(tokens) - 3):
+        if tokens[i] == '-':
+            # Check if we'd be wrapping any restriction operators
+            if any(op in tokens[i+1:i+4] for op in restriction_ops):
+                continue
+                
+            # Wrap tokens[i+1:i+4] in parentheses
+            new_tokens = tokens[:i+1] + ['('] + tokens[i+1:i+4] + [')'] + tokens[i+4:]
+            expressions.add(' '.join(new_tokens))
 
 def generate_all_expressions(operands, operators): # finishes adding possible expressions based on prev 2 functions
     """Generator that yields all possible expressions"""
@@ -515,23 +507,14 @@ def find_solutions(operands, operators,goal): # finds ALL solutions given cubes
             solCount+=1
     print(f"{solCount} solutiosn generated")
 
-def quick_solutions(operands, operators, target_size, max_solutions=10, testV = False):
-
-    """
-    Finds solutions using EXACTLY the provided operands (including duplicates)
-    without generating additional colors
-    """
-    # Validate we have enough operands
-    required_operands = len([op for op in operators if op in {'n','u','-','c','='}]) + 1
-    if len(operands) < required_operands:
-        raise ValueError(f"Need at least {required_operands} operands for {operators}")
-
+def quick_solutions(colors, operators, target_size, max_solutions=10, testV=False):
     solutions = []
     seen = set()
     
-    for expr in generate_all_expressions(operands, operators):
+    for expr in generate_all_expressions(colors, operators):
         try:
             computed_sets.clear()
+            global token_counter
             token_counter = 0
             
             final_token = parse(expr)
@@ -540,27 +523,31 @@ def quick_solutions(operands, operators, target_size, max_solutions=10, testV = 
             
             if len(solution_cards) == target_size and card_key not in seen:
                 seen.add(card_key)
-                solutions.append((expr, solution_cards))
+                if testV:
+                    solutions.append((expr, solution_cards))  # Return tuple
+                else:
+                    solutions.append(expr)
                 
                 if len(solutions) >= max_solutions:
                     break
         except:
             continue
     
-     # Print results
     if testV:
-        output = "Generated solutions:\n\n"
-        if len(solutions) == 0:
-            output += "No solutions found"
-        else:
-            for i, (expr, cards) in enumerate(solutions, 1):
-                output += f"{expr}: {sorted(cards)}  \n"
-        return output
-    print(f"\nFound {len(solutions)} solutions with {target_size} cards")
-    return solutions
+        if not solutions:
+            return "**No valid solutions found.**"
+        
+        output_lines = [f"### Found {len(solutions)} Solution{'s' if len(solutions) > 1 else ''}"]
+        for i, (expr, cards) in enumerate(solutions, 1):
+            output_lines.append(f"""#### Solution {i}
+- **Expression:** `{expr}`
+- **Cards:** `{', '.join(cards)}`  
+""")
+        return '\n'.join(output_lines)
 
+    return solutions[:max_solutions]
 
-def parseR(expr, testV = False):
+def parseR(expr, testV = False, compV = False):
     """Processes restrictions left-to-right and returns intersection of all intermediate results"""
     
     # Split on operators, preserving order
@@ -601,11 +588,192 @@ def parseR(expr, testV = False):
 
     if testV:
         return f"New universe has {len(final_set)} cards: {list(final_set)}"
+    if compV:
+        return final_set
     print(f"New universe has {len(final_set)} cards: {list(final_set)}")
     return final_set
 
+def generate_all_restrictions(operands, operators, restrictions):
+    """Final version with strict operator-prime separation"""
+    # Combine operators and validate
+    restriction_ops={'c', '='}
+    combined_ops = operators + list(restrictions)
+    num_primes = combined_ops.count("'")
+    clean_ops = [op for op in combined_ops if op != "'"]
+    
+    expressions = set()
+    
+    # Generate expressions with larger parentheses groups
+    for opnd_perm in permutations(operands):
+        for opr_perm in permutations(clean_ops):
+            # Build base tokens
+            tokens = []
+            for i in range(len(opr_perm)):
+                tokens.append(opnd_perm[i])
+                tokens.append(opr_perm[i])
+            tokens.append(opnd_perm[-1])
+            
+            # Add flat version
+            flat_expr = ''.join(tokens)
+            expressions.add(flat_expr)
+            
+            # Generate all possible parenthesized versions
+            for start in range(0, len(tokens)-2, 2):
+                for end in range(start+2, len(tokens), 2):
+                    # Only parenthesize around non-restriction segments
+                    segment_ops = {tokens[i] for i in range(start+1, end, 2)}
+                    if not segment_ops & restriction_ops:
+                        new_tokens = tokens[:]
+                        new_tokens[start:end+1] = ['('] + tokens[start:end+1] + [')']
+                        new_expr = ''.join(new_tokens)
+                        
+                        # Verify no restriction ops got enclosed
+                        if not has_restricted_parentheses(new_expr, restriction_ops):
+                            expressions.add(new_expr)
+    
+    # Generate prime variants
+    all_expressions = set()
+    for expr in expressions:
+        if num_primes > 0:
+            for variant in generate_strict_primes(expr, num_primes, restriction_ops):
+                all_expressions.add(variant)
+        else:
+            all_expressions.add(expr)
+    
+    return all_expressions
+
+def has_restricted_parentheses(expr, restriction_ops):
+    """More efficient parentheses checker"""
+    paren_stack = []
+    for i, char in enumerate(expr):
+        if char == '(':
+            paren_stack.append(i)
+        elif char == ')':
+            if paren_stack:
+                start = paren_stack.pop()
+                if any(op in expr[start+1:i] for op in restriction_ops):
+                    return True
+    return False
+
+def generate_strict_primes(expr, primes_left, restriction_ops):
+    """Prime generator that allows primes at expression end"""
+    if primes_left == 0:
+        return {expr}
+    
+    variants = set()
+    # Allow primes after any color or closing )
+    for i in [i for i, c in enumerate(expr) if c in mapping or c == ')']:
+        new_expr = expr[:i+1] + "'" + expr[i+1:]
+        if not has_restricted_parentheses(new_expr, restriction_ops):
+            variants.update(generate_strict_primes(new_expr, primes_left-1, restriction_ops))
+    
+    return variants if variants else {expr}
+
+def comp_restrictions(colors, operators, restrictions, goal):
+    """Find valid restrictions that leave >= goal cards"""
+    final_restrictions = []
+    expressions = generate_all_restrictions(colors, operators, restrictions)
+    for expr in expressions:
+        try:
+            remaining_cards = parseR(expr, compV=True)  # Get cards after restriction
+            if len(remaining_cards) >= goal:
+                final_restrictions.append((expr, remaining_cards))
+        except:
+            continue
+    return final_restrictions
+
+def comp_solutions(colors, operators, goal, compV=False):
+    final_solutions = []
+    solution_data = quick_solutions(colors, operators, goal, testV=True)
+    
+    for item in solution_data:
+        if isinstance(item, tuple):  # Handle both return formats
+            expr, cards = item
+            if len(cards) >= goal:
+                final_solutions.append((expr, cards))
+        else:
+            expr = item
+            # Need to evaluate if we don't have cards
+            cards = get_set(parse(expr))
+            if len(cards) >= goal:
+                final_solutions.append((expr, cards))
+    
+    if compV:
+        return final_solutions
+    for expr, cards in final_solutions:
+        print(f"{expr}: {cards}")
+
+def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, testV=False):
+    """Safe version with comprehensive error handling"""
+    try:
+        # Input validation
+        if not colors or not operators:
+            raise ValueError("Colors and operators cannot be empty")
+        if not all(c in mapping for c in colors):
+            raise ValueError("Invalid color specified")
+        
+        valid_restrictions = []
+        try:
+            valid_restrictions = comp_restrictions(colors, operators, restrictions, goal)
+        except Exception as e:
+            if testV:
+                return f"Error generating restrictions: {str(e)}"
+            raise
+
+        valid_solutions = []
+        try:
+            valid_solutions = comp_solutions(colors, operators, goal, compV=True)
+        except Exception as e:
+            if testV:
+                return f"Error generating solutions: {str(e)}"
+            raise
+
+        solutions = []
+        for res_expr, res_cards in valid_restrictions[:max_solutions*2]:  # Limit for performance
+            for sol_expr, sol_cards in valid_solutions[:max_solutions*2]:
+                try:
+                    common_cards = intersect(res_cards, sol_cards)
+                    if len(common_cards) == goal:
+                        solutions.append({
+                            "restriction": res_expr,
+                            "solution": sol_expr,
+                            "cards": common_cards
+                        })
+                        if len(solutions) >= max_solutions:
+                            break
+                except Exception as e:
+                    continue
+            if len(solutions) >= max_solutions:
+                break
+
+        if testV:
+            if not solutions:
+                return "No valid solutions found matching all criteria."
+            
+            output = []
+            for i, sol in enumerate(solutions, 1):
+                output.append(f"Solution {i}:")
+                output.append(f"Restriction: {sol['restriction']}")
+                output.append(f"Solution: {sol['solution']}")
+                output.append(f"Cards: {', '.join(sol['cards'])}\n")
+            return "\n".join(output)
+
+        return solutions
+
+    except Exception as e:
+        if testV:
+            return f"Calculation failed: {str(e)}"
+        raise
 
 
+# colors = ['R','B','G','G']
+# operators = ['n','u']
+# restriction_operators = ['=']
+# calc_full_solution(colors,operators,restriction_operators,10)
+
+
+    
+    
 
 
 # cProfile.run('quick_solutions(colors,operations,6,10)', sort='cumtime')

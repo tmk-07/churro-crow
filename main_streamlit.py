@@ -1,7 +1,7 @@
 import streamlit as st
-from churrooscalc import double_set, set_cards, parseR, quick_solutions
+from churrooscalc import double_set, set_cards, parseR, quick_solutions, calc_full_solution
 
-st.title("OS Calculator v1.73a")
+st.title("OS Calculator v2.2")
   
 # Inputs
 doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none. Example: (RnB)'")
@@ -32,6 +32,14 @@ elif selectMethod.startswith('3'):
     enterGoal = st.number_input("What is the goal?", min_value=0, step=1)
     solutionsWanted = st.number_input("How many solutions wanted?", min_value=1, step=1)
 
+elif selectMethod.startswith('4'):
+    colorMat = st.text_input("Enter color cubes. Example: BGYY")
+    operationMat = st.text_input("Enter operation cubes. Example: nnu'-")
+    restrictionMat = st.text_input("Enter restriction cubes. Example: =c")
+    enterGoal = st.number_input("What is the goal?", min_value=0, step=1)
+    solutionsWanted = st.number_input("How many solutions wanted?", min_value=1, step=1)
+
+
 if st.button("Run calculation"):
     with st.status("Generating solutions...", expanded=True) as status:
         output = []
@@ -44,6 +52,8 @@ if st.button("Run calculation"):
             output = parseR(restriction, testV=True)
         elif selectMethod.startswith('3'):
             output = quick_solutions(colorMat, operationMat, enterGoal, solutionsWanted, testV=True)
+        elif selectMethod.startswith('4'):
+            output = calc_full_solution(colorMat, list(operationMat), list(restrictionMat), enterGoal, solutionsWanted,testV=True)
         else:
             output = "Option 4 not implemented yet."
         status.update(label="Calculations complete.", state="complete")
