@@ -1,7 +1,7 @@
 import streamlit as st
 from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
-st.title("OS Calculator v1.3ba")
+st.title("OS Calculator v1.4a")
   
 # Inputs
 doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none. Example: (RnB)'")
@@ -35,7 +35,7 @@ elif selectMethod.startswith('3'):
 if st.button("Run calculation"):
     output = []
     if doubleSet != "N":
-        output += double_set(doubleSet)
+       double_set(doubleSet)
 
     if selectMethod.startswith('1'):
         output = set_cards(setName, testV=True)
