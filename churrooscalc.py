@@ -547,9 +547,11 @@ def quick_solutions(operands, operators, target_size, max_solutions=10):
     
      # Print results
     print(f"\nFound {len(solutions)} solutions with {target_size} cards")
+    output = ""
     for i, (expr, cards) in enumerate(solutions, 1):
-        print(f"{i}. {expr} → {sorted(cards)}")
-    return solutions
+        output += f"{expr}: {sorted(cards)}\n"
+    return f"Generated solutions:\n{output}"
+
 
 def parseR(expr, testV = False):
     """Processes restrictions left-to-right and returns intersection of all intermediate results"""
@@ -594,7 +596,9 @@ def parseR(expr, testV = False):
         print("New universe cards:")
         for i in final_set:
             print(i)
-    return list(final_set)
+    return f"New universe has {len(final_set)} cards. {list(final_set)}"
+
+
 
 
 
