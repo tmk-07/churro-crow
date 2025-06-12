@@ -554,7 +554,6 @@ def quick_solutions(operands, operators, target_size, max_solutions=10):
         output += f"{expr}: {sorted(cards)}  \n"
     return output
 
-
 def parseR(expr, testV = False):
     """Processes restrictions left-to-right and returns intersection of all intermediate results"""
     

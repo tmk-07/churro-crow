@@ -1,7 +1,7 @@
 import streamlit as st
 from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
-st.title("OS Calculator v1.42")
+st.title("OS Calculator v1.5")
   
 # Inputs
 doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none. Example: (RnB)'")
@@ -33,17 +33,18 @@ elif selectMethod.startswith('3'):
     solutionsWanted = st.number_input("How many solutions wanted?", min_value=1, step=1)
 
 if st.button("Run calculation"):
-    output = []
-    if doubleSet != "N":
-       double_set(doubleSet)
+    with st.status("Generating solutions...", expanded=True) as status:
+        output = []
+        if doubleSet != "N":
+            double_set(doubleSet)
 
-    if selectMethod.startswith('1'):
-        output = set_cards(setName, testV=True)
-    elif selectMethod.startswith('2'):
-        output = parseR(restriction, testV=True)
-    elif selectMethod.startswith('3'):
-        output = quick_solutions(colorMat, operationMat, enterGoal, solutionsWanted)
-    else:
-        output = "Option 4 not implemented yet."
-
-    st.markdown(output, unsafe_allow_html=False)
+        if selectMethod.startswith('1'):
+            output = set_cards(setName, testV=True)
+        elif selectMethod.startswith('2'):
+            output = parseR(restriction, testV=True)
+        elif selectMethod.startswith('3'):
+            output = quick_solutions(colorMat, operationMat, enterGoal, solutionsWanted)
+        else:
+            output = "Option 4 not implemented yet."
+        st.success("done.")
+        st.markdown(output, unsafe_allow_html=False)
