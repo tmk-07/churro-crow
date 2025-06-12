@@ -547,10 +547,10 @@ def quick_solutions(operands, operators, target_size, max_solutions=10):
     
      # Print results
     print(f"\nFound {len(solutions)} solutions with {target_size} cards")
-    output = ""
+    output = "Generated solutions:\n\n"
     for i, (expr, cards) in enumerate(solutions, 1):
-        output += f"{expr}: {sorted(cards)}\n"
-    return f"Generated solutions:\n\n{output}"  # Two \n after header, one \n per line after
+        output += f"{expr}: {sorted(cards)}  \n"
+    return output
 
 
 def parseR(expr, testV = False):
