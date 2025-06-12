@@ -1,15 +1,15 @@
 import streamlit as st
 from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
-st.title("OS Calculator 1.33")
-
+st.title("OS Calculator v1.33a")
+  
 # Inputs
-doubleSet = st.text_input("First, establish variations. If doubleset, enter it. Else N")
+doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none. Example: (RnB)'")
 
 selectMethod = st.selectbox("What would you like to do?",
                             ['1 - Calculate a solution set',
                              '2 - Calculate a restriction',
-                             '3 - Find a solution set',
+                             '3 - Enter cubes and generate a solution',
                              '4 - Find a restriction/solution set (Not implemented)'])
 
 # Defaults for all inputs
@@ -21,10 +21,10 @@ enterGoal = 0
 solutionsWanted = 1
 
 if selectMethod.startswith('1'):
-    setName = st.text_input("Enter the set expression. Example: RnG-B")
+    setName = st.text_input("Enter the set expression. Example: RnG-B or (BnY)'u(R-G)")
 
 elif selectMethod.startswith('2'):
-    restriction = st.text_input("Enter restriction statement. Example: RnGcB'=G")
+    restriction = st.text_input("Enter restriction statement. Example: BcR or Y=RnGcB'=G")
 
 elif selectMethod.startswith('3'):
     colorMat = st.text_input("Enter color cubes. Example: BGYY")
