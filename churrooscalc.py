@@ -267,7 +267,7 @@ def set_cards(expr, testV=False): # returns the set of cards given a solution se
         for card in mySet:
             print(card)
         print(f"Solution Set Cards: {len(mySet)}")
-    return list(mySet)
+    return f"Solution set has {len(mySet)} cards. {list(mySet)}"
 
 def minus_parenthesis(tokens, expressions): # adds parenthesis around next expression after any minuses
     # Always add original
