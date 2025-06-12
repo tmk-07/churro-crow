@@ -1,7 +1,7 @@
 import streamlit as st
 from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
-st.title("OS Calculator v1.5")
+st.title("OS Calculator v1.6")
   
 # Inputs
 doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none. Example: (RnB)'")

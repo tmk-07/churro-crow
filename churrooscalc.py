@@ -550,7 +550,7 @@ def quick_solutions(operands, operators, target_size, max_solutions=10):
      # Print results
     print(f"\nFound {len(solutions)} solutions with {target_size} cards")
     output = "Generated solutions:\n\n"
-    if not solutions:
+    if len(solutions) == 0:
         output += "No solutions found"
     else:
         for i, (expr, cards) in enumerate(solutions, 1):
