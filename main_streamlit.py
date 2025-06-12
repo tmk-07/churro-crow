@@ -46,4 +46,4 @@ if st.button("Run calculation"):
     else:
         output += "Option 4 not implemented yet."
 
-    st.text(output)
+    st.write(output)
