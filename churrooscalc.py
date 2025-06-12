@@ -550,9 +550,13 @@ def quick_solutions(operands, operators, target_size, max_solutions=10):
      # Print results
     print(f"\nFound {len(solutions)} solutions with {target_size} cards")
     output = "Generated solutions:\n\n"
-    for i, (expr, cards) in enumerate(solutions, 1):
-        output += f"{expr}: {sorted(cards)}  \n"
+    if not solutions:
+        output += "No solutions found"
+    else:
+        for i, (expr, cards) in enumerate(solutions, 1):
+            output += f"{expr}: {sorted(cards)}  \n"
     return output
+
 
 def parseR(expr, testV = False):
     """Processes restrictions left-to-right and returns intersection of all intermediate results"""

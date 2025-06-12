@@ -35,7 +35,7 @@ elif selectMethod.startswith('3'):
 if st.button("Run calculation"):
     with st.status("Generating solutions...", expanded=True) as status:
         output = []
-        if doubleSet != "N":
+        if doubleSet != "N" and doubleSet != "":
             double_set(doubleSet)
 
         if selectMethod.startswith('1'):
