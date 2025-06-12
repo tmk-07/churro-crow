@@ -267,7 +267,7 @@ def set_cards(expr, testV=False): # returns the set of cards given a solution se
         for card in mySet:
             print(card)
         print(f"Solution Set Cards: {len(mySet)}")
-    return f"Solution set has {len(mySet)} cards. {list(mySet)}"
+    return f"Solution set has {len(mySet)} cards: {list(mySet)}"
 
 def minus_parenthesis(tokens, expressions): # adds parenthesis around next expression after any minuses
     # Always add original
@@ -550,7 +550,7 @@ def quick_solutions(operands, operators, target_size, max_solutions=10):
     output = ""
     for i, (expr, cards) in enumerate(solutions, 1):
         output += f"{expr}: {sorted(cards)}\n"
-    return f"Generated solutions:\n{output}"
+    return f"Generated solutions:\n\n{output}"  # Two \n after header, one \n per line after
 
 
 def parseR(expr, testV = False):
@@ -596,7 +596,7 @@ def parseR(expr, testV = False):
         print("New universe cards:")
         for i in final_set:
             print(i)
-    return f"New universe has {len(final_set)} cards. {list(final_set)}"
+    return f"New universe has {len(final_set)} cards: {list(final_set)}"
 
 
 

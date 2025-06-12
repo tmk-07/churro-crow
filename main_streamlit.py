@@ -1,7 +1,7 @@
 import streamlit as st
 from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
-st.title("OS Calculator 1.3")
+st.title("OS Calculator 1.31")
 
 # Inputs
 doubleSet = st.text_input("First, establish variations. If doubleset, enter it. Else N")
@@ -46,4 +46,4 @@ if st.button("Run calculation"):
     else:
         output = "Option 4 not implemented yet."
 
-    st.write(output)
+    st.markdown(output, unsafe_allow_html=False)
