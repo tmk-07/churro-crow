@@ -266,10 +266,10 @@ def set_cards(expr, testV=False, doubleWork=False): # returns the set of cards g
     if testV:
         for card in mySet:
             print(card)
-        print(f"Solution Set Cards: {len(mySet)}")
+        return f"Solution set has {len(mySet)} cards: {list(mySet)}"
     if doubleWork:
         return mySet
-    return f"Solution set has {len(mySet)} cards: {list(mySet)}"
+    print(f"Solution set has {len(mySet)} cards: {list(mySet)}")
 
 def minus_parenthesis(tokens, expressions): # adds parenthesis around next expression after any minuses
     # Always add original
@@ -515,7 +515,7 @@ def find_solutions(operands, operators,goal): # finds ALL solutions given cubes
             solCount+=1
     print(f"{solCount} solutiosn generated")
 
-def quick_solutions(operands, operators, target_size, max_solutions=10):
+def quick_solutions(operands, operators, target_size, max_solutions=10, testV = False):
 
     """
     Finds solutions using EXACTLY the provided operands (including duplicates)
@@ -548,14 +548,16 @@ def quick_solutions(operands, operators, target_size, max_solutions=10):
             continue
     
      # Print results
+    if testV:
+        output = "Generated solutions:\n\n"
+        if len(solutions) == 0:
+            output += "No solutions found"
+        else:
+            for i, (expr, cards) in enumerate(solutions, 1):
+                output += f"{expr}: {sorted(cards)}  \n"
+        return output
     print(f"\nFound {len(solutions)} solutions with {target_size} cards")
-    output = "Generated solutions:\n\n"
-    if len(solutions) == 0:
-        output += "No solutions found"
-    else:
-        for i, (expr, cards) in enumerate(solutions, 1):
-            output += f"{expr}: {sorted(cards)}  \n"
-    return output
+    return solutions
 
 
 def parseR(expr, testV = False):
@@ -598,11 +600,9 @@ def parseR(expr, testV = False):
     final_set = set(all_results)
 
     if testV:
-        print("New universe cards:")
-        for i in final_set:
-            print(i)
-    return f"New universe has {len(final_set)} cards: {list(final_set)}"
-
+        return f"New universe has {len(final_set)} cards: {list(final_set)}"
+    print(f"New universe has {len(final_set)} cards: {list(final_set)}")
+    return final_set
 
 
 
