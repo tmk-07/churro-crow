@@ -1,7 +1,7 @@
 import streamlit as st
 from churrooscalc import double_set, set_cards, parseR, quick_solutions
 
-st.title("OS Calculator")
+st.title("OS Calculator 1.1")
 
 # Inputs
 doubleSet = st.text_input("First, establish variations. If doubleset, enter it. Else N")
@@ -33,7 +33,7 @@ elif selectMethod.startswith('3'):
     solutionsWanted = st.number_input("How many solutions wanted?", min_value=1, step=1)
 
 if st.button("Run calculation"):
-    output = ""
+    output = []
     if doubleSet != "N":
         output += double_set(doubleSet)
 

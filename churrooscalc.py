@@ -259,7 +259,7 @@ def double_set(expr): # adds the double set cards to universe
         universe[card + ' (2)'] = universe[card] + ['d']
     universeRefresher()
 
-def set_cards(expr, testV=False, streamer=False): # returns the set of cards given a solution set
+def set_cards(expr, testV=False): # returns the set of cards given a solution set
     """ returns the list of cards given an expression """
     myToken = parse(expr)
     mySet = get_set(myToken)
@@ -267,9 +267,7 @@ def set_cards(expr, testV=False, streamer=False): # returns the set of cards giv
         for card in mySet:
             print(card)
         print(f"Solution Set Cards: {len(mySet)}")
-    elif streamer:
-        return mySet
-    return mySet
+    return list(mySet)
 
 def minus_parenthesis(tokens, expressions): # adds parenthesis around next expression after any minuses
     # Always add original
