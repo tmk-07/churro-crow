@@ -3,6 +3,8 @@ import cProfile
 from functools import lru_cache
 import time
 
+
+
 cards = {
     "B": ["b"],
     "R": ["r"],
