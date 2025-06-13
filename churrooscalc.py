@@ -533,7 +533,13 @@ def quick_solutions(colors, operators, target_size, max_solutions=10, testV=Fals
             continue
     
     if testV:
-        return solutions  # Return raw data, not formatted strings
+        output = []
+        for i, (expr, cards) in enumerate(solutions, 1):
+            output.append(f"Solution {i}:\n")
+            output.append(f"    Expression: {expr}\n")
+            output.append(f"    Cards: {', '.join(cards)}\n")
+        return "\n".join(output)
+
 
     return solutions[:max_solutions]  # Limit number of results
 
@@ -789,10 +795,10 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
             
             output = []
             for i, sol in enumerate(solutions, 1):
-                output.append(f"Solution {i}:")
-                output.append(f"Restriction: {sol['restriction']}")
-                output.append(f"Solution: {sol['solution']}")
-                output.append(f"Cards: {', '.join(sol['cards'])}\n")
+                output.append(f"Solution {i}:\n")
+                output.append(f"    Restriction: {sol['restriction']}\n")
+                output.append(f"    Solution: {sol['solution']}\n")
+                output.append(f"    Cards: {', '.join(sol['cards'])}\n")
             return "\n".join(output)
 
         return solutions

@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v3.981")
+st.title("OS Calculator v3.99d")
 
 # Define the order of cards for display
 CARD_ORDER = [
@@ -35,6 +35,9 @@ st.markdown("""
         width: 140px;
         text-align: center;
         transition: all 0.3s ease;
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
     }
     
     /* Card image styling */
@@ -46,6 +49,8 @@ st.markdown("""
         object-fit: contain;
         background-color: #f0f2f6;
         transition: all 0.3s ease;
+        display: block;
+        box-sizing: border-box;
     }
     
     /* Card in excluded state */
@@ -54,34 +59,7 @@ st.markdown("""
         opacity: 0.7;
     }
     
-    /* Toggle button styling */
-    .hidden-button {
-        width: 100%;
-        padding: 8px 0;
-        border: none;
-        border-radius: 8px;
-        background-color: #1f77b4;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        margin-top: 8px;
-    }
-    
-    .hidden-button:hover {
-        background-color: #1665a0;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    /* Button in excluded state */
-    .card-excluded .toggle-btn {
-        background-color: #ff4b4b;
-    }
-    
-    .card-excluded .toggle-btn:hover {
-        background-color: #e03a3a;
-    }
+ 
     
     /* Status indicator */
     .status-indicator {
@@ -108,7 +86,6 @@ st.markdown("""
         margin-top: 20px;
     }
     
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -149,9 +126,6 @@ def interactive_card_selector():
                     f"""
                     <div class="{card_class}">
                         <img src="data:image/png;base64,{img_b64}" class="card-image">
-                        <button class="toggle-btn" onclick="document.getElementById('btn_{card}').click()">
-                            {card}
-                        </button>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -165,16 +139,13 @@ def interactive_card_selector():
                         <div style="height:140px; display:flex; align-items:center; justify-content:center; background:#f0f2f6; border-radius:10px; border:2px dashed #ccc;">
                             <strong>{card}</strong>
                         </div>
-                        <button class="toggle-btn" onclick="document.getElementById('btn_{card}').click()">
-                            {card}
-                        </button>
                     </div>
                     """,
                     unsafe_allow_html=True
                 )
             
             # Create a hidden button to handle state changes
-            if st.button(f"{card}", key=f"btn_{card}"):
+            if st.button(f"   {card}   ", key=f"btn_{card}"):
                 st.session_state.card_states[card] = not st.session_state.card_states[card]
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -359,6 +330,8 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
             
             if not valid:
                 st.error(message)
+            elif restrictionMat == "":
+                output = quick_solutions(colorMat,operationMat,enterGoal,solutionsWanted,testV=True)
             else:
                 # Calculate full solution (not implemented)
                 output = calc_full_solution(
@@ -376,5 +349,5 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
         status.update(label="✅ Calculations complete!", state="complete")
         
         # Display output in expandable section
-        with st.expander("View Results", expanded=True):
-            st.markdown(output, unsafe_allow_html=False)
+        # with st.expander("View Results", expanded=True):
+        st.markdown(output, unsafe_allow_html=False)
