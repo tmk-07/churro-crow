@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v4.02")
+st.title("OS Calculator v4.03")
 
 # Define the order of cards for display
 CARD_ORDER = [
@@ -210,7 +210,7 @@ selectMethod = st.selectbox(
     [
         '1 - Calculate a solution set',
         '2 - Calculate a restriction',
-        '4 - Enter cubes and generate a solution'
+        '3 - Enter cubes and generate a solution'
     ]
 )
 
@@ -237,34 +237,34 @@ elif selectMethod.startswith('2'):
         placeholder="Example: BcR or Y=RnGcB'=G"
     )
 
-elif selectMethod.startswith('3'):
-    # Color cubes input
-    colorMat = st.text_input(
-        "Enter color cubes", 
-        placeholder="Example: BGYY"
-    )
-    # Operation cubes input
-    operationMat = st.text_input(
-        "Enter operation cubes", 
-        placeholder="Example: nnu'-"
-    )
-    # Goal number input
-    enterGoal = st.number_input(
-        "What is the goal?", 
-        min_value=0, 
-        step=1,
-        help="The target value for the solution"
-    )
-    # Solutions count input
-    solutionsWanted = st.number_input(
-        "How many solutions wanted?", 
-        min_value=1, 
-        step=1,
-        value=5,
-        help="Maximum number of solutions to generate"
-    )
+# elif selectMethod.startswith('3'):
+#     # Color cubes input
+#     colorMat = st.text_input(
+#         "Enter color cubes", 
+#         placeholder="Example: BGYY"
+#     )
+#     # Operation cubes input
+#     operationMat = st.text_input(
+#         "Enter operation cubes", 
+#         placeholder="Example: nnu'-"
+#     )
+#     # Goal number input
+#     enterGoal = st.number_input(
+#         "What is the goal?", 
+#         min_value=0, 
+#         step=1,
+#         help="The target value for the solution"
+#     )
+#     # Solutions count input
+#     solutionsWanted = st.number_input(
+#         "How many solutions wanted?", 
+#         min_value=1, 
+#         step=1,
+#         value=5,
+#         help="Maximum number of solutions to generate"
+#     )
 
-elif selectMethod.startswith('4'):
+elif selectMethod.startswith('3'):
     # Full solution inputs (not implemented)
     colorMat = st.text_input(
         "Enter color cubes", 
@@ -310,17 +310,17 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
             # Parse restriction statement
             output = parseR(restriction, testV=True)
             
-        elif selectMethod.startswith('3'):
-            # Generate quick solutions
-            output = quick_solutions(
-                colorMat, 
-                operationMat, 
-                enterGoal, 
-                solutionsWanted, 
-                testV=True
-            )
+        # elif selectMethod.startswith('3'):
+        #     # Generate quick solutions
+        #     output = quick_solutions(
+        #         colorMat, 
+        #         operationMat, 
+        #         enterGoal, 
+        #         solutionsWanted, 
+        #         testV=True
+        #     )
             
-        elif selectMethod.startswith('4'):
+        elif selectMethod.startswith('3'):
             # Validate inputs for full solution
             valid, message = validate_inputs(
                 list(colorMat), 
