@@ -103,17 +103,50 @@ solution_statements = {}
 
 
 
-def get_color_combinations(colors, operators): # combinatorics for colors if colors > operators + 1
-    """Generates valid color combinations based on operation count."""
-    n_ops = len([op for op in operators if op in {'n', 'u', '-', 'c', '='}])  # Count non-prime ops
-    required_colors = n_ops + 1
+def get_color_combinations(colors, operators):
+    """Generate all valid color combinations based on operator count"""
+    required_colors = len([op for op in operators if op in {'n','u','-','c','='}]) + 1
     
     if len(colors) == required_colors:
-        return [tuple(colors)]  # Single tuple for consistency
+        return [tuple(colors)]  # Single combination if exact match
     elif len(colors) > required_colors:
+        # Get all possible combinations of required colors
         return list(combinations(colors, required_colors))
     else:
-        raise ValueError(f"Need at least {required_colors} colors for {n_ops} operations")
+        raise ValueError(
+            f"Need at least {required_colors} colors for {len(operators)} operators. "
+            f"Only got {len(colors)} colors."
+        )
+
+def generate_all_expressions(operands, operators):
+    """Updated to handle color combinations"""
+    color_combos = get_color_combinations(operands, operators)
+    num_primes = operators.count("'")
+    clean_ops = [op for op in operators if op != "'"]
+    
+    all_expressions = set()
+    
+    for color_combo in color_combos:
+        # Generate expressions for each color combination
+        for opnd_perm in permutations(color_combo):
+            for opr_perm in permutations(clean_ops):
+                # Build base expression
+                expr = []
+                for i in range(len(opr_perm)):
+                    expr.append(opnd_perm[i])
+                    expr.append(opr_perm[i])
+                expr.append(opnd_perm[-1])
+                expr_str = ''.join(expr)
+                all_expressions.add(expr_str)
+                
+                # Generate prime variants
+                if num_primes > 0:
+                    for variant in generate_prime_variants(list(expr_str), num_primes):
+                        all_expressions.add(variant)
+    
+    return all_expressions
+
+
 
 @lru_cache(maxsize=None)
 def cached_find_solutions(color_combo, operators_str, target_size):
@@ -165,75 +198,71 @@ def new_token(): # creates tokens for new expressions generated
     token_counter += 1
     return f"T{token_counter}"
 
-def calcExpp(tokens): #algorithm for calculating actual set of cards given an expression
-    """"" calculates solution set given an expression. helper for parse function """""
+def calcExpp(tokens):
+    """Safe expression evaluation with empty list handling"""
+    if not tokens:
+        raise ValueError("Empty expression cannot be evaluated")
+    
     ops = ('u','n','-')
     global computed_sets
 
     # Process primes first
-    while "'" in tokens:
-        i = tokens.index("'")
-        result = prime(get_set(tokens[i-1]))
-        tok = new_token()
-        computed_sets[tok] = result
-        # Replace exactly the previous token and the prime symbol
-        tokens[i-1 : i+1] = [tok]  
-
-    # Process binary operators
-    while any(op in tokens for op in ops):
-        i = next(idx for idx, tok in enumerate(tokens) if tok in ops)
-        func = op_map.get(tokens[i])
-        result = func(get_set(tokens[i-1]), get_set(tokens[i+1]))
-        tok = new_token()
-        computed_sets[tok] = result
-        # Replace exactly the left operand, operator, and right operand
-        tokens[i-1 : i+2] = [tok]
-
-    return tokens[0]  # return the single token representing the evaluated set
-
-def parse(expr): # takes solution set input and solves its set
-    
-    tokens = tokenize(expr)
-    
-    # Helper to find matching '(' for a given ')'
-    def find_matching_open(tokens, close_index):
-        count = 0
-        for j in range(close_index, -1, -1):
-            if tokens[j] == ")":
-                count += 1
-            elif tokens[j] == "(":
-                count -= 1
-                if count == 0:
-                    return j
-        return None  # no matching '(' found
-
-    while ")" in tokens:
-        close_idx = tokens.index(")")
-        if close_idx + 1 < len(tokens) and tokens[close_idx + 1] == "'":
-            # prime applies to parenthesis block
-            open_idx = find_matching_open(tokens, close_idx)
-            inner_expr = tokens[open_idx + 1 : close_idx]
-            result_token = calcExpp(inner_expr)
-            result = prime(get_set(result_token))
+    while "'" in tokens and len(tokens) > 1:
+        try:
+            i = tokens.index("'")
+            if i == 0:
+                raise ValueError("Prime cannot be first character")
+            result = prime(get_set(tokens[i-1]))
             tok = new_token()
             computed_sets[tok] = result
-            # replace ( ... )' with tok
-            tokens[open_idx : close_idx + 2] = [tok]
-        else:
-            open_idx = find_matching_open(tokens, close_idx)
-            inner_expr = tokens[open_idx + 1 : close_idx]
-            result_token = calcExpp(inner_expr)
-            tokens[open_idx : close_idx + 1] = [result_token]
+            tokens[i-1:i+1] = [tok]  # Replace operand and prime
+        except (ValueError, IndexError) as e:
+            raise ValueError(f"Invalid prime: {str(e)}")
 
-    # Now evaluate the remaining expression (no parentheses left)
-    final_token = calcExpp(tokens)
-    return final_token
+    # Process binary operators
+    while any(op in tokens for op in ops) and len(tokens) >= 3:
+        try:
+            i = next(idx for idx, tok in enumerate(tokens) if tok in ops)
+            if i == 0 or i >= len(tokens)-1:
+                raise ValueError("Operator at invalid position")
+                
+            func = op_map.get(tokens[i])
+            result = func(get_set(tokens[i-1]), get_set(tokens[i+1]))
+            tok = new_token()
+            computed_sets[tok] = result
+            tokens[i-1:i+2] = [tok]  # Replace left, op, right
+        except StopIteration:
+            break
+        except Exception as e:
+            raise ValueError(f"Operator error: {str(e)}")
 
-    # Print results (assuming get_set returns list of cards)
-    # final_set = get_set(final_token)
-    # for card in final_set:
-    #     print(card)
-    # print(f"Solution Set Cards: {len(final_set)}")
+    if not tokens:
+        raise ValueError("Expression reduced to empty")
+    return tokens[0]
+
+def parse(expr):
+    """Safe parsing with validation"""
+    if not expr or not isinstance(expr, str):
+        raise ValueError("Invalid expression input")
+
+    try:
+        tokens = tokenize(expr)
+
+        # ✅ Strip out unsupported parentheses
+        tokens = [t for t in tokens if t not in ('(', ')')]
+
+        if not tokens:
+            raise ValueError("No tokens found in expression")
+
+        final_token = calcExpp(tokens)
+
+        if not final_token:
+            raise ValueError("Evaluation returned empty token")
+
+        return final_token
+
+    except Exception as e:
+        raise ValueError(f"Failed to parse '{expr}': {str(e)}")
 
 def double_set(expr): # adds the double set cards to universe
     """ adds double setted cards to universe """
@@ -373,29 +402,6 @@ def minus_parenthesis(tokens, expressions, restriction_ops={'c', '='}):
             new_tokens = tokens[:i+1] + ['('] + tokens[i+1:i+4] + [')'] + tokens[i+4:]
             expressions.add(' '.join(new_tokens))
 
-def generate_all_expressions(operands, operators): # finishes adding possible expressions based on prev 2 functions
-    """Generator that yields all possible expressions"""
-    num_primes = operators.count("'")
-    clean_ops = [op for op in operators if op != "'"]
-    
-    # Your existing permutation logic
-    for opnd_perm in permutations(operands):
-        for opr_perm in permutations(clean_ops):
-            # Build base expression
-            expr = []
-            for i in range(len(opr_perm)):
-                expr.append(opnd_perm[i])
-                expr.append(opr_perm[i])
-            expr.append(opnd_perm[-1])
-            expr_str = ''.join(expr)
-            
-            # Generate prime variants (from your code)
-            if num_primes > 0:
-                for variant in generate_prime_variants(list(expr_str), num_primes):
-                    yield variant
-            else:
-                yield expr_str
-
 def potential_restrictions(restriction_expr, current_universe=None):
     """
     Calculates what the universe WOULD become after a restriction without modifying it
@@ -513,39 +519,63 @@ def quick_solutions(colors, operators, target_size, max_solutions=10, testV=Fals
     
     for expr in generate_all_expressions(colors, operators):
         try:
-            computed_sets.clear()
-            global token_counter
-            token_counter = 0
-            
-            final_token = parse(expr)
-            solution_cards = get_set(final_token)
-            card_key = frozenset(solution_cards)
-            
-            if len(solution_cards) == target_size and card_key not in seen:
-                seen.add(card_key)
+            token = parse(expr)
+            solution_cards = get_set(token)
+
+            if len(solution_cards) == target_size:
                 if testV:
-                    solutions.append((expr, solution_cards))  # Return tuple
+                    solutions.append((expr, solution_cards))  # Raw data only
                 else:
-                    solutions.append(expr)
-                
-                if len(solutions) >= max_solutions:
-                    break
-        except:
+                    solutions.append(expr)  # Raw expression only
+        except Exception:
             continue
     
     if testV:
-        if not solutions:
-            return "**No valid solutions found.**"
-        
-        output_lines = [f"### Found {len(solutions)} Solution{'s' if len(solutions) > 1 else ''}"]
-        for i, (expr, cards) in enumerate(solutions, 1):
-            output_lines.append(f"""#### Solution {i}
-- **Expression:** `{expr}`
-- **Cards:** `{', '.join(cards)}`  
-""")
-        return '\n'.join(output_lines)
+        return solutions  # Return raw data, not formatted strings
 
-    return solutions[:max_solutions]
+    return solutions[:max_solutions]  # Limit number of results
+
+def validate_inputs(colors, operators, restriction_ops):
+    """
+    Validates whether the number of colors is sufficient given the operators and restriction operators.
+
+    Rules:
+    - The solution expression must have (#binary_operators + 1) colors.
+    - If restriction operators are given, the restriction expression must also have
+      (#binary_operators + #restriction_operators + 1) colors.
+    - Therefore, total colors required = max(
+        #binary_operators + 1,
+        #binary_operators + #restriction_operators + 1
+      )
+    """
+    binary_ops = [op for op in operators if op in {'n', 'u', '-'}]
+    restriction_ops = [op for op in restriction_ops if op in {'=', 'c'}]
+
+    required_for_solution = len(binary_ops) + 1
+    required_for_restriction = len(binary_ops) + len(restriction_ops) + 1 if restriction_ops else 0
+
+    total_required = max(required_for_solution, required_for_restriction)
+    color_count = len(colors)
+
+    if len(binary_ops) == 0:
+        return False, "You must provide at least one binary operator to generate a solution expression."
+
+    if color_count < total_required:
+        return False, f"You provided {color_count} colors, but at least {total_required} are needed for the operators and restrictions."
+
+    return True, "Inputs are valid."
+
+def format_solutions(solutions):
+    """Convert raw solutions to pretty output"""
+    if not solutions:
+        return "No solutions found"
+    
+    output = []
+    for i, (expr, cards) in enumerate(solutions, 1):
+        output.append(f"Solution {i}:")
+        output.append(f"  Expression: {expr}")
+        output.append(f"  Cards: {', '.join(cards)}\n")
+    return '\n'.join(output)
 
 def parseR(expr, testV = False, compV = False):
     """Processes restrictions left-to-right and returns intersection of all intermediate results"""
@@ -687,21 +717,26 @@ def comp_solutions(colors, operators, goal, compV=False):
     solution_data = quick_solutions(colors, operators, goal, testV=True)
     
     for item in solution_data:
-        if isinstance(item, tuple):  # Handle both return formats
-            expr, cards = item
+        try:
+            if isinstance(item, tuple):
+                expr, cards = item
+            else:
+                expr = item
+                cards = get_set(parse(expr))  # This may now raise ValueError
+                
             if len(cards) >= goal:
                 final_solutions.append((expr, cards))
-        else:
-            expr = item
-            # Need to evaluate if we don't have cards
-            cards = get_set(parse(expr))
-            if len(cards) >= goal:
-                final_solutions.append((expr, cards))
-    
+        except ValueError as e:
+            print(f"Skipping invalid expression: {str(e)}")
+            continue
+        except Exception as e:
+            print(f"Unexpected error with {expr}: {str(e)}")
+            continue
+
     if compV:
         return final_solutions
-    for expr, cards in final_solutions:
-        print(f"{expr}: {cards}")
+    # ... rest of function ...
+
 
 def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, testV=False):
     """Safe version with comprehensive error handling"""
@@ -766,10 +801,10 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
         raise
 
 
-# colors = ['R','B','G','G']
-# operators = ['n','u']
-# restriction_operators = ['=']
-# calc_full_solution(colors,operators,restriction_operators,10)
+colors = ['R','B','G','G']
+operators = ['n','u']
+restriction_operators = ['=']
+print(calc_full_solution(colors, operators, restriction_operators, 10, testV=True))
 
 
     
