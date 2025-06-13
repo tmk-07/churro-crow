@@ -534,6 +534,8 @@ def quick_solutions(colors, operators, target_size, max_solutions=10, testV=Fals
     
     if testV:
         output = []
+        if not solutions:
+                return "No valid solutions found matching all criteria."
         for i, (expr, cards) in enumerate(solutions, 1):
             output.append(f"Solution {i}:\n")
             output.append(f"    Expression: {expr}\n")

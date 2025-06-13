@@ -6,13 +6,14 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v3.99d")
+st.title("OS Calculator v4.02")
 
 # Define the order of cards for display
 CARD_ORDER = [
-    "blank", "B", "R", "G", "Y",
-    "BR", "BG", "BY", "RG", "RY", "GY",
-    "BRG", "BRY", "BGY", "RGY", "BRGY"
+    "BR", "BRY", "BY", "B", 
+    "BRG", "BRGY", "BGY", "BG", 
+    "RG", "RGY", "GY", "G", 
+    "R", "RY", "Y", "blank"
 ]
 
 # Path to folder containing card images
@@ -209,8 +210,7 @@ selectMethod = st.selectbox(
     [
         '1 - Calculate a solution set',
         '2 - Calculate a restriction',
-        '3 - Enter cubes and generate a solution',
-        '4 - Find a restriction/solution set (Not implemented)'
+        '4 - Enter cubes and generate a solution'
     ]
 )
 
@@ -275,7 +275,7 @@ elif selectMethod.startswith('4'):
         placeholder="Example: nnu'-"
     )
     restrictionMat = st.text_input(
-        "Enter restriction cubes", 
+        "Enter restriction cubes (if any)", 
         placeholder="Example: =c"
     )
     enterGoal = st.number_input(
