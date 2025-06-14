@@ -517,7 +517,7 @@ def find_solutions(operands, operators,goal): # finds ALL solutions given cubes
             solCount+=1
     print(f"{solCount} solutiosn generated")
 
-def quick_solutions(colors, operators, target_size, max_solutions=10, testV=False, compV=False):
+def quick_solutions(colors, operators, target_size, max_solutions=10, testV=False, compV=False,opt3v=False):
     solutions = []
     seen = set()
     
@@ -525,8 +525,11 @@ def quick_solutions(colors, operators, target_size, max_solutions=10, testV=Fals
         try:
             token = parse(expr)
             solution_cards = get_set(token)
-            if testV:
+            if testV and not opt3v:
                 if len(solution_cards) >= target_size:
+                    solutions.append((expr, solution_cards))
+            elif opt3v:
+                if len(solution_cards) == target_size:
                     solutions.append((expr, solution_cards))
             else:
                 solutions.append(expr)  # Raw expression only

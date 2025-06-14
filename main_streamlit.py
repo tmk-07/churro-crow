@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v4.3")
+st.title("OS Calculator v4.4")
 
 # Define the order of cards for display
 CARD_ORDER = [
@@ -331,7 +331,7 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
             if not valid:
                 st.error(message)
             elif restrictionMat == "":
-                output = quick_solutions(colorMat,operationMat,enterGoal,solutionsWanted,testV=True)
+                output = quick_solutions(colorMat,operationMat,enterGoal,solutionsWanted,testV=True,opt3v=True)
             else:
                 # Calculate full solution (not implemented)
                 output = calc_full_solution(
