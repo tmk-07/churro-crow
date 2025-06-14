@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v4.03")
+st.title("OS Calculator v4.1")
 
 # Define the order of cards for display
 CARD_ORDER = [

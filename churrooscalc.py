@@ -120,19 +120,21 @@ def get_color_combinations(colors, operators):
             f"Only got {len(colors)} colors."
         )
 
-def generate_all_expressions(operands, operators):
-    """Updated to handle color combinations"""
-    color_combos = get_color_combinations(operands, operators)
+def generate_all_expressions(colors, operators):
+    """Generate expressions using exactly all the operators and (operators + 1) colors."""
     num_primes = operators.count("'")
-    clean_ops = [op for op in operators if op != "'"]
-    
+    binary_ops = [op for op in operators if op in {'n', 'u', '-'}]
+    clean_ops = binary_ops  # no restriction ops here
+
+    required_color_count = len(clean_ops) + 1
+    color_combos = combinations(colors, required_color_count)
+
     all_expressions = set()
-    
+
     for color_combo in color_combos:
-        # Generate expressions for each color combination
         for opnd_perm in permutations(color_combo):
-            for opr_perm in permutations(clean_ops):
-                # Build base expression
+            for opr_perm in set(permutations(clean_ops)):
+                # Build expression
                 expr = []
                 for i in range(len(opr_perm)):
                     expr.append(opnd_perm[i])
@@ -140,14 +142,13 @@ def generate_all_expressions(operands, operators):
                 expr.append(opnd_perm[-1])
                 expr_str = ''.join(expr)
                 all_expressions.add(expr_str)
-                
-                # Generate prime variants
+
+                # Add prime variants
                 if num_primes > 0:
                     for variant in generate_prime_variants(list(expr_str), num_primes):
                         all_expressions.add(variant)
-    
-    return all_expressions
 
+    return all_expressions
 
 
 @lru_cache(maxsize=None)
@@ -811,10 +812,6 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
         raise
 
 
-colors = ['R','B','G','G']
-operators = ['n','u']
-restriction_operators = ['=']
-print(calc_full_solution(colors, operators, restriction_operators, 10, testV=True))
 
 
     
