@@ -147,7 +147,7 @@ def generate_all_expressions(colors, operators):
                 if num_primes > 0:
                     for variant in generate_prime_variants(list(expr_str), num_primes):
                         all_expressions.add(variant)
-
+                    all_expressions.discard(expr_str)
     return all_expressions
 
 
@@ -387,7 +387,6 @@ def generate_prime_variants(tokens, num_primes, restriction_ops={'c', '='}):
                 variant[end:]
             )
             expanded_variants.add(new_variant)
-    
     return expanded_variants
 
 def minus_parenthesis(tokens, expressions, restriction_ops={'c', '='}):
@@ -490,6 +489,7 @@ def find_solutions(operands, operators,goal): # finds ALL solutions given cubes
         # Generate all prime variants for this expression
         prime_variants = generate_prime_variants(list(token_str), num_primes)
         all_expressions.update(prime_variants)
+        all_expressions.discard(token_str)
 
     # Step 3: Evaluate all expressions
     solution_statements = {}
@@ -816,10 +816,9 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
         raise
 
 
-
-
-    
-    
+# tok = tokenize("RnGnB")
+# for it in generate_prime_variants(tok, 2,['c']):
+#     print(it)
 
 
 # cProfile.run('quick_solutions(colors,operations,6,10)', sort='cumtime')
