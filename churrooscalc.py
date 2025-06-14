@@ -33,7 +33,7 @@ def setUpdate(color): # resets each color set (like B) when a restriction is cal
             result.append(card)
     return result
 def universeRefresher(): # updates the universe and color lists
-    global B, R, G, Y
+    global B, R, G, Y, V, Z
     B = setUpdate("b")
     R = setUpdate("r")
     G = setUpdate("g")
@@ -42,6 +42,8 @@ def universeRefresher(): # updates the universe and color lists
     mapping['R'] = R
     mapping['G'] = G
     mapping['Y'] = Y
+    mapping['V'] = V
+    mapping['Z'] = Z
 
 
 # original initialization of color sets
@@ -61,13 +63,21 @@ Y = []
 for card in universe:
     if "y" in universe[card]:
         Y.append(card)    
+V = []
+for card in universe:
+    V.append(card)
+Z = []
+
 
 colorList = [B,R,G,Y]
 mapping = { # finds matching list color when given string
         'R': R,
         'B': B,
         'G': G,
-        'Y': Y
+        'Y': Y,
+        'V' : V,
+        'Z' : Z
+
     }
 
 
@@ -274,6 +284,9 @@ def double_set(expr): # adds the double set cards to universe
     for card in doubled:
         universe[card + ' (2)'] = universe[card] + ['d']
     universeRefresher()
+    V = []
+    for card in universe:
+        V.append(card)
 
 def set_cards(expr, testV=False, doubleWork=False): # returns the set of cards given a solution set
     """ returns the list of cards given an expression """
@@ -435,7 +448,10 @@ def potential_restrictions(restriction_expr, current_universe=None):
     test_universe = current_universe.copy()
     op_func(left_set, right_set)  # This modifies test_universe
     universeRefresher()  # Update color sets
-    
+    V = []
+    for card in universe:
+        V.append(card)
+
     # Return the would-be state
     removed = set(current_universe) - set(test_universe.keys())
     return test_universe, removed
