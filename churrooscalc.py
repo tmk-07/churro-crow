@@ -517,7 +517,7 @@ def find_solutions(operands, operators,goal): # finds ALL solutions given cubes
             solCount+=1
     print(f"{solCount} solutiosn generated")
 
-def quick_solutions(colors, operators, target_size, max_solutions=10, testV=False):
+def quick_solutions(colors, operators, target_size, max_solutions=10, testV=False, compV=False):
     solutions = []
     seen = set()
     
@@ -542,7 +542,8 @@ def quick_solutions(colors, operators, target_size, max_solutions=10, testV=Fals
             output.append(f"    Expression: {expr}\n")
             output.append(f"    Cards: {', '.join(cards)}\n")
         return "\n".join(output)
-
+    if compV:
+        return solutions
 
     return solutions[:max_solutions]  # Limit number of results
 
@@ -725,7 +726,7 @@ def comp_restrictions(colors, operators, restrictions, goal):
 
 def comp_solutions(colors, operators, goal, compV=False):
     final_solutions = []
-    solution_data = quick_solutions(colors, operators, goal, testV=True)
+    solution_data = quick_solutions(colors, operators, goal,compV=True)
     
     for item in solution_data:
         try:
@@ -734,7 +735,6 @@ def comp_solutions(colors, operators, goal, compV=False):
             else:
                 expr = item
                 cards = get_set(parse(expr))  # This may now raise ValueError
-                
             if len(cards) >= goal:
                 final_solutions.append((expr, cards))
         except ValueError as e:
@@ -746,6 +746,7 @@ def comp_solutions(colors, operators, goal, compV=False):
 
     if compV:
         return final_solutions
+    return final_solutions
     # ... rest of function ...
 
 
@@ -821,11 +822,3 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
 # cProfile.run('quick_solutions(colors,operations,6,10)', sort='cumtime')
 
 # parseR("RnYcBcG")
-
-
-# col = ['R','B','G','G']
-# ops = ['u','n',"'"]
-
-# for expr in generate_all_expressions(col, ops):
-#     if len(expr) < 6:
-#         print(expr)
