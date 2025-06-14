@@ -151,6 +151,7 @@ def generate_all_expressions(colors, operators):
     return all_expressions
 
 
+
 @lru_cache(maxsize=None)
 def cached_find_solutions(color_combo, operators_str, target_size):
     """Memoized version of find_solutions."""
@@ -524,12 +525,11 @@ def quick_solutions(colors, operators, target_size, max_solutions=10, testV=Fals
         try:
             token = parse(expr)
             solution_cards = get_set(token)
-
-            if len(solution_cards) == target_size:
-                if testV:
-                    solutions.append((expr, solution_cards))  # Raw data only
-                else:
-                    solutions.append(expr)  # Raw expression only
+            if testV:
+                if len(solution_cards) >= target_size:
+                    solutions.append((expr, solution_cards))
+            else:
+                solutions.append(expr)  # Raw expression only
         except Exception:
             continue
     
@@ -822,3 +822,10 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
 
 # parseR("RnYcBcG")
 
+
+# col = ['R','B','G','G']
+# ops = ['u','n',"'"]
+
+# for expr in generate_all_expressions(col, ops):
+#     if len(expr) < 6:
+#         print(expr)
