@@ -769,7 +769,7 @@ def comp_solutions(colors, operators, goal, compV=False):
     # ... rest of function ...
 
 
-def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, testV=False):
+def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, testV=False,required="",forbidden=""):
     """Safe version with comprehensive error handling"""
     try:
         # Input validation
@@ -800,11 +800,25 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
                 try:
                     common_cards = intersect(res_cards, sol_cards)
                     if len(common_cards) == goal:
-                        solutions.append({
-                            "restriction": res_expr,
-                            "solution": sol_expr,
-                            "cards": common_cards
-                        })
+                        if forbidden != "" and forbidden not in common_cards:
+                            if required != "" and required in common_cards:
+                                solutions.append({
+                                "restriction": res_expr,
+                                "solution": sol_expr,
+                                "cards": common_cards
+                                })
+                        elif required != "" and required in common_cards:
+                            solutions.append({
+                                "restriction": res_expr,
+                                "solution": sol_expr,
+                                "cards": common_cards
+                                })
+                        else:
+                            solutions.append({
+                                "restriction": res_expr,
+                                "solution": sol_expr,
+                                "cards": common_cards
+                                })
                         if len(solutions) >= max_solutions:
                             break
                 except Exception as e:

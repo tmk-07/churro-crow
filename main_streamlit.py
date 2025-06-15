@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v4.72")
+st.title("OS Calculator v4.8")
 
 # Define the order of cards for display
 CARD_ORDER = [
@@ -200,9 +200,12 @@ universeRefresher()
 # Double set input (optional)
 st.markdown("---")
 doubleSet = st.text_input(
-    "Enter the doubleset, if any. Enter N for none. Example: (RnB)'",
-    placeholder="Enter doubleset expression..."
+    "Enter the doubleset, if any. Enter N for none",
+    placeholder="Example: (RnB)'"
 )
+
+reqCard = st.text_input("Enter required card, if any.",placeholder="Example: BGR")
+forbCard = st.text_input("Enter forbidden card, if any.",placeholder="Example: RY")
 
 # Calculation method selection
 selectMethod = st.selectbox(
@@ -290,6 +293,7 @@ elif selectMethod.startswith('3'):
         value=5
     )
 
+
 # --- Calculation Execution ---
 st.markdown("---")
 if st.button("Run calculation", use_container_width=True, type="primary"):
@@ -334,16 +338,34 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
                 output = quick_solutions(colorMat,operationMat,enterGoal,solutionsWanted,testV=True,opt3v=True)
             else:
                 # Calculate full solution (not implemented)
-                output = calc_full_solution(
-                    colorMat, 
-                    list(operationMat), 
-                    list(restrictionMat), 
-                    enterGoal, 
-                    solutionsWanted, 
-                    testV=True
-                )
-        else:
-            output = "Option 4 not implemented yet."
+                if reqCard != "N" and reqCard != "":
+                    if reqCard not in churrooscalc.universe:
+                        output = "Required card not in universe"
+                    elif forbCard != "n" and forbCard != "": 
+                        output = calc_full_solution(
+                            colorMat, 
+                            list(operationMat), 
+                            list(restrictionMat), 
+                            enterGoal, 
+                            solutionsWanted, 
+                            testV=True,required=reqCard,forbidden=forbCard)
+                    else:    
+                        output = calc_full_solution(
+                            colorMat, 
+                            list(operationMat), 
+                            list(restrictionMat), 
+                            enterGoal, 
+                            solutionsWanted, 
+                            testV=True,required=reqCard)
+                else:
+                    output = calc_full_solution(
+                            colorMat, 
+                            list(operationMat), 
+                            list(restrictionMat), 
+                            enterGoal, 
+                            solutionsWanted, 
+                            testV=True)
+                
         
         # Update status when complete
         status.update(label="✅ Calculations complete!", state="complete")
