@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v4.61")
+st.title("OS Calculator v4.72")
 
 # Define the order of cards for display
 CARD_ORDER = [
@@ -268,7 +268,7 @@ elif selectMethod.startswith('3'):
     # Full solution inputs (not implemented)
     colorMat = st.text_input(
         "Enter color cubes", 
-        placeholder="Example: BGYY"
+        placeholder="Example: BVRZGY"
     )
     operationMat = st.text_input(
         "Enter operation cubes", 

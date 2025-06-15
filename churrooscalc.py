@@ -555,7 +555,7 @@ def quick_solutions(colors, operators, target_size, max_solutions=10, testV=Fals
     if testV:
         output = []
         if not solutions:
-                return "No valid solutions found matching all criteria."
+                return "No valid solutions found matching all criteria 😭🥀"
         for i, (expr, cards) in enumerate(solutions, 1):
             output.append(f"Solution {i}:\n")
             output.append(f"    Expression: {expr}\n")
@@ -599,7 +599,7 @@ def validate_inputs(colors, operators, restriction_ops):
 def format_solutions(solutions):
     """Convert raw solutions to pretty output"""
     if not solutions:
-        return "No solutions found"
+        return "No solutions found 🥀"
     
     output = []
     for i, (expr, cards) in enumerate(solutions, 1):
@@ -814,7 +814,7 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
 
         if testV:
             if not solutions:
-                return "No valid solutions found matching all criteria."
+                return "No valid solutions found matching all criteria 😭🥀"
             
             output = []
             for i, sol in enumerate(solutions, 1):
