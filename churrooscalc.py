@@ -565,7 +565,7 @@ def find_solutions(operands, operators,goal): # finds ALL solutions given cubes
             solCount+=1
     print(f"{solCount} solutiosn generated")
 
-def quick_solutions(colors, operators, target_size, max_solutions=10, testV=False, compV=False,opt3v=False):
+def quick_solutions(colors, operators, target_size, max_solutions=10, testV=False, compV=False,opt3v=False,requ="",forbi=""):
     solutions = []
     seen = set()
     
@@ -573,14 +573,26 @@ def quick_solutions(colors, operators, target_size, max_solutions=10, testV=Fals
         try:
             token = parse(expr)
             solution_cards = get_set(token)
-            if testV and not opt3v:
-                if len(solution_cards) >= target_size:
-                    solutions.append((expr, solution_cards))
-            elif opt3v:
-                if len(solution_cards) == target_size:
-                    solutions.append((expr, solution_cards))
-            else:
-                solutions.append(expr)  # Raw expression only
+            if requ != "" and requ in solution_cards:
+                    if forbi not in solution_cards:
+                        if testV and not opt3v:
+                            if len(solution_cards) >= target_size:
+                                solutions.append((expr, solution_cards))
+                        elif opt3v:
+                            if len(solution_cards) == target_size:
+                                solutions.append((expr, solution_cards))
+                        else:
+                            solutions.append(expr)  # Raw expression only
+            elif requ == "":
+                    if forbi not in solution_cards:
+                        if testV and not opt3v:
+                            if len(solution_cards) >= target_size:
+                                solutions.append((expr, solution_cards))
+                        elif opt3v:
+                            if len(solution_cards) == target_size:
+                                solutions.append((expr, solution_cards))
+                        else:
+                            solutions.append(expr)  # Raw expression only
         except Exception:
             continue
     
@@ -640,7 +652,7 @@ def format_solutions(solutions):
         output.append(f"  Cards: {', '.join(cards)}\n")
     return '\n'.join(output)
 
-def parseR(expr, testV = False, compV = False):
+def parseR(expr, testV = False, compV = False,requ=""):
     """Processes restrictions left-to-right and returns intersection of all intermediate results"""
     
     # Split on operators, preserving order
@@ -759,22 +771,26 @@ def generate_strict_primes(expr, primes_left, restriction_ops):
     
     return variants if variants else {expr}
 
-def comp_restrictions(colors, operators, restrictions, goal):
+def comp_restrictions(colors, operators, restrictions, goal,req=""):
     """Find valid restrictions that leave >= goal cards"""
     final_restrictions = []
     expressions = generate_all_restrictions(colors, operators, restrictions)
     for expr in expressions:
         try:
             remaining_cards = parseR(expr, compV=True)  # Get cards after restriction
-            if len(remaining_cards) >= goal:
-                final_restrictions.append((expr, remaining_cards))
+            if req != "" and req in remaining_cards:
+                if len(remaining_cards) >= goal:
+                    final_restrictions.append((expr, remaining_cards))
+            elif req == "":
+                if len(remaining_cards) >= goal:
+                    final_restrictions.append((expr, remaining_cards))
         except:
             continue
     return final_restrictions
 
-def comp_solutions(colors, operators, goal, compV=False):
+def comp_solutions(colors, operators, goal, compV=False,req="",forb=""):
     final_solutions = []
-    solution_data = quick_solutions(colors, operators, goal,compV=True)
+    solution_data = quick_solutions(colors, operators, goal,compV=True,requ=req,forbi=forb)
     
     for item in solution_data:
         try:
@@ -798,6 +814,91 @@ def comp_solutions(colors, operators, goal, compV=False):
     # ... rest of function ...
 
 
+# def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, testV=False,required="",forbidden=""):
+#     """Safe version with comprehensive error handling"""
+#     try:
+#         # Input validation
+#         if not colors or not operators:
+#             raise ValueError("Colors and operators cannot be empty")
+#         if not all(c in mapping for c in colors):
+#             raise ValueError("Invalid color specified")
+        
+#         valid_restrictions = []
+#         try:
+#             valid_restrictions = comp_restrictions(colors, operators, restrictions, goal)
+#         except Exception as e:
+#             if testV:
+#                 return f"Error generating restrictions: {str(e)}"
+#             raise
+
+#         valid_solutions = []
+#         try:
+#             valid_solutions = comp_solutions(colors, operators, goal, compV=True,req=required,forb=forbidden)
+#         except Exception as e:
+#             if testV:
+#                 return f"Error generating solutions: {str(e)}"
+#             raise
+
+#         solutions = []
+#         for res_expr, res_cards in valid_restrictions:  # Limit for performance
+#             for sol_expr, sol_cards in valid_solutions:
+#                 try:
+#                     common_cards = intersect(res_cards, sol_cards)
+#                     if len(common_cards) == goal:
+#                         if forbidden != "":
+#                             if forbidden not in common_cards:
+#                                 if required != "":
+#                                     if required in common_cards:
+#                                         solutions.append({
+#                                         "restriction": res_expr,
+#                                         "solution": sol_expr,
+#                                         "cards": common_cards
+#                                         })
+#                                 else:
+#                                    solutions.append({
+#                                         "restriction": res_expr,
+#                                         "solution": sol_expr,
+#                                         "cards": common_cards
+#                                         })
+#                         elif required != "":
+#                             if required in common_cards:
+#                                 solutions.append({
+#                                     "restriction": res_expr,
+#                                     "solution": sol_expr,
+#                                     "cards": common_cards
+#                                     })
+#                         else:
+#                             solutions.append({
+#                                 "restriction": res_expr,
+#                                 "solution": sol_expr,
+#                                 "cards": common_cards
+#                                 })
+#                         if len(solutions) >= max_solutions:
+#                             break
+#                 except Exception as e:
+#                     continue
+#             if len(solutions) >= max_solutions:
+#                 break
+
+#         if testV:
+#             if not solutions:
+#                 return "No valid solutions found matching all criteria 😭🥀"
+            
+#             output = []
+#             for i, sol in enumerate(solutions, 1):
+#                 output.append(f"Solution {i}:\n")
+#                 output.append(f"    Restriction: {sol['restriction']}\n")
+#                 output.append(f"    Solution: {sol['solution']}\n")
+#                 output.append(f"    Cards: {', '.join(sol['cards'])}\n")
+#             return "\n".join(output)
+
+#         return solutions
+
+#     except Exception as e:
+#         if testV:
+#             return f"Calculation failed: {str(e)}"
+#         raise
+
 def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, testV=False,required="",forbidden=""):
     """Safe version with comprehensive error handling"""
     try:
@@ -809,7 +910,7 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
         
         valid_restrictions = []
         try:
-            valid_restrictions = comp_restrictions(colors, operators, restrictions, goal)
+            valid_restrictions = comp_restrictions(colors, operators, restrictions, goal,req=required)
         except Exception as e:
             if testV:
                 return f"Error generating restrictions: {str(e)}"
@@ -817,7 +918,7 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
 
         valid_solutions = []
         try:
-            valid_solutions = comp_solutions(colors, operators, goal, compV=True)
+            valid_solutions = comp_solutions(colors, operators, goal, compV=True,req=required,forb=forbidden)
         except Exception as e:
             if testV:
                 return f"Error generating solutions: {str(e)}"
@@ -829,34 +930,11 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
                 try:
                     common_cards = intersect(res_cards, sol_cards)
                     if len(common_cards) == goal:
-                        if forbidden != "":
-                            if forbidden not in common_cards:
-                                if required != "":
-                                    if required in common_cards:
-                                        solutions.append({
-                                        "restriction": res_expr,
-                                        "solution": sol_expr,
-                                        "cards": common_cards
-                                        })
-                                else:
-                                   solutions.append({
-                                        "restriction": res_expr,
-                                        "solution": sol_expr,
-                                        "cards": common_cards
-                                        })
-                        elif required != "":
-                            if required in common_cards:
-                                solutions.append({
-                                    "restriction": res_expr,
-                                    "solution": sol_expr,
-                                    "cards": common_cards
-                                    })
-                        else:
-                            solutions.append({
-                                "restriction": res_expr,
-                                "solution": sol_expr,
-                                "cards": common_cards
-                                })
+                        solutions.append({
+                            "restriction": res_expr,
+                            "solution": sol_expr,
+                            "cards": common_cards
+                            })
                         if len(solutions) >= max_solutions:
                             break
                 except Exception as e:
@@ -884,12 +962,16 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
         raise
 
 
-# colors = list("BGBG")
+
+
+
+# colors = list("BGBR")
 # operators = list("un'")
 # restrictions = list("c")
 # goal = 8
-# max_solutions = 20
+# max_solutions = 5
 # testV=True
 
+# print(calc_full_solution(colors,operators,restrictions,goal,max_solutions=20,testV=True,required="BRGY",forbidden="BR"))
 
 # cProfile.run('calc_full_solution(colors,operators,restrictions,goal)', sort='cumtime')
