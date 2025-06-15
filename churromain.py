@@ -587,7 +587,6 @@ def parseR(expr, testV = False):
             current_set = equal2(left_set, right_set)
         else:
             raise ValueError(f"Unknown operator: {operator}")
-        print(current_set.copy())
         all_results.intersection_update(current_set.copy())  # Store this intermediate result
     # Return intersection of all intermediate results
     final_set = set(all_results)

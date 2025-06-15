@@ -215,7 +215,6 @@ def new_token(): # creates tokens for new expressions generated
     return f"T{token_counter}"
 
 def calcExpp(tokens):
-    print(tokens)
     """Safe expression evaluation with empty list handling"""
     if not tokens:
         raise ValueError("Empty expression cannot be evaluated")
@@ -825,24 +824,33 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
             raise
 
         solutions = []
-        for res_expr, res_cards in valid_restrictions[:max_solutions*2]:  # Limit for performance
-            for sol_expr, sol_cards in valid_solutions[:max_solutions*2]:
+        for res_expr, res_cards in valid_restrictions:  # Limit for performance
+            for sol_expr, sol_cards in valid_solutions:
                 try:
                     common_cards = intersect(res_cards, sol_cards)
                     if len(common_cards) == goal:
-                        if forbidden != "" and forbidden not in common_cards:
-                            if required != "" and required in common_cards:
+                        if forbidden != "":
+                            if forbidden not in common_cards:
+                                if required != "":
+                                    if required in common_cards:
+                                        solutions.append({
+                                        "restriction": res_expr,
+                                        "solution": sol_expr,
+                                        "cards": common_cards
+                                        })
+                                else:
+                                   solutions.append({
+                                        "restriction": res_expr,
+                                        "solution": sol_expr,
+                                        "cards": common_cards
+                                        })
+                        elif required != "":
+                            if required in common_cards:
                                 solutions.append({
-                                "restriction": res_expr,
-                                "solution": sol_expr,
-                                "cards": common_cards
-                                })
-                        elif required != "" and required in common_cards:
-                            solutions.append({
-                                "restriction": res_expr,
-                                "solution": sol_expr,
-                                "cards": common_cards
-                                })
+                                    "restriction": res_expr,
+                                    "solution": sol_expr,
+                                    "cards": common_cards
+                                    })
                         else:
                             solutions.append({
                                 "restriction": res_expr,
@@ -876,13 +884,12 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
         raise
 
 
-# parseR(expr,testV=True)
+# colors = list("BGBG")
+# operators = list("un'")
+# restrictions = list("c")
+# goal = 8
+# max_solutions = 20
+# testV=True
 
-# tok = tokenize("RnGnB")
-# for it in generate_prime_variants(tok, 2,['c']):
-#     print(it)
 
-
-# cProfile.run('quick_solutions(colors,operations,6,10)', sort='cumtime')
-
-# parseR("RnYcBcG")
+# cProfile.run('calc_full_solution(colors,operators,restrictions,goal)', sort='cumtime')
