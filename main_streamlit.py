@@ -1,12 +1,12 @@
 import streamlit as st
 from PIL import Image
-from churrooscalc import double_set, set_cards, parseR, quick_solutions, calc_full_solution, validate_inputs, cards, universeRefresher
+from churrooscalc import double_set, set_cards, parseR, quick_solutions, calc_full_solution, validate_inputs, cards, universeRefresher, gen_full_solution
 import os
 import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v5")
+st.title("OS Calculator v5.71")
 
 # Define the order of cards for display
 CARD_ORDER = [
@@ -211,9 +211,8 @@ forbCard = st.text_input("Enter forbidden card, if any.",placeholder="Example: R
 selectMethod = st.selectbox(
     "What would you like to do?",
     [
-        '1 - Calculate a solution set',
-        '2 - Calculate a restriction',
-        '3 - Enter cubes and generate a solution'
+        '1 - Calculate a solution and/or restriction set (currently under construction)',
+        '2 - Generate a solution given cubes'
     ]
 )
 
@@ -228,46 +227,16 @@ solutionsWanted = 1
 # Show appropriate inputs based on selected method
 if selectMethod.startswith('1'):
     # Set expression input
-    setName = st.text_input(
-        "Enter the set expression", 
-        placeholder="Example: RnG-B or (BnY)'u(R-G)"
+    restriction_statement = st.text_input(
+        "Enter the restriction statement (if any)", 
+        placeholder="Example: BuG'cR=(YnG)=GuR'"
+    )
+    solution_statement = st.text_input(
+        "Enter the solution expression (if any)",
+        placeholder="Example: (R-Y)'u(B'nY)"
     )
 
 elif selectMethod.startswith('2'):
-    # Restriction statement input
-    restriction = st.text_input(
-        "Enter restriction statement", 
-        placeholder="Example: BcR or Y=RnGcB'=G"
-    )
-
-# elif selectMethod.startswith('3'):
-#     # Color cubes input
-#     colorMat = st.text_input(
-#         "Enter color cubes", 
-#         placeholder="Example: BGYY"
-#     )
-#     # Operation cubes input
-#     operationMat = st.text_input(
-#         "Enter operation cubes", 
-#         placeholder="Example: nnu'-"
-#     )
-#     # Goal number input
-#     enterGoal = st.number_input(
-#         "What is the goal?", 
-#         min_value=0, 
-#         step=1,
-#         help="The target value for the solution"
-#     )
-#     # Solutions count input
-#     solutionsWanted = st.number_input(
-#         "How many solutions wanted?", 
-#         min_value=1, 
-#         step=1,
-#         value=5,
-#         help="Maximum number of solutions to generate"
-#     )
-
-elif selectMethod.startswith('3'):
     # Full solution inputs (not implemented)
     colorMat = st.text_input(
         "Enter color cubes", 
@@ -308,23 +277,9 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
         # Execute selected calculation method
         if selectMethod.startswith('1'):
             # Calculate solution set
-            output = set_cards(setName, testV=True)
+            output = calc_full_solution(restriction_statement, solution_statement)
             
         elif selectMethod.startswith('2'):
-            # Parse restriction statement
-            output = parseR(restriction, testV=True)
-            
-        # elif selectMethod.startswith('3'):
-        #     # Generate quick solutions
-        #     output = quick_solutions(
-        #         colorMat, 
-        #         operationMat, 
-        #         enterGoal, 
-        #         solutionsWanted, 
-        #         testV=True
-        #     )
-            
-        elif selectMethod.startswith('3'):
             # Validate inputs for full solution
             valid, message = validate_inputs(
                 list(colorMat), 
@@ -342,7 +297,7 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
                     if reqCard not in churrooscalc.universe:
                         output = "Required card not in universe"
                     elif forbCard != "n" and forbCard != "": 
-                        output = calc_full_solution(
+                        output = gen_full_solution(
                             colorMat, 
                             list(operationMat), 
                             list(restrictionMat), 
@@ -350,7 +305,7 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
                             solutionsWanted, 
                             testV=True,required=reqCard,forbidden=forbCard)
                     else:    
-                        output = calc_full_solution(
+                        output = gen_full_solution(
                             colorMat, 
                             list(operationMat), 
                             list(restrictionMat), 
@@ -358,7 +313,7 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
                             solutionsWanted, 
                             testV=True,required=reqCard)
                 else:
-                    output = calc_full_solution(
+                    output = gen_full_solution(
                             colorMat, 
                             list(operationMat), 
                             list(restrictionMat), 

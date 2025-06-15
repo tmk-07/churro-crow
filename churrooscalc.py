@@ -318,7 +318,7 @@ def double_set(expr): # adds the double set cards to universe
     for card in universe:
         V.append(card)
 
-def set_cards(expr, testV=False, doubleWork=False): # returns the set of cards given a solution set
+def set_cards(expr, testV=False, doubleWork=False,calcV=False): # returns the set of cards given a solution set
     """ returns the list of cards given an expression """
     myToken = parse(expr)
     mySet = get_set(myToken)
@@ -328,7 +328,10 @@ def set_cards(expr, testV=False, doubleWork=False): # returns the set of cards g
         return f"Solution set has {len(mySet)} cards: {list(mySet)}"
     if doubleWork:
         return mySet
+    if calcV:
+        return mySet
     print(f"Solution set has {len(mySet)} cards: {list(mySet)}")
+    return mySet
 
 
 
@@ -652,7 +655,7 @@ def format_solutions(solutions):
         output.append(f"  Cards: {', '.join(cards)}\n")
     return '\n'.join(output)
 
-def parseR(expr, testV = False, compV = False,requ=""):
+def parseR(expr, testV = False, compV = False,calcV=False,requ=""):
     """Processes restrictions left-to-right and returns intersection of all intermediate results"""
     
     # Split on operators, preserving order
@@ -692,7 +695,8 @@ def parseR(expr, testV = False, compV = False,requ=""):
         return f"New universe has {len(final_set)} cards: {list(final_set)}"
     if compV:
         return final_set
-    print(f"New universe has {len(final_set)} cards: {list(final_set)}")
+    if calcV:
+        return final_set
     return final_set
 
 def generate_all_restrictions(operands, operators, restrictions):
@@ -899,7 +903,7 @@ def comp_solutions(colors, operators, goal, compV=False,req="",forb=""):
 #             return f"Calculation failed: {str(e)}"
 #         raise
 
-def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, testV=False,required="",forbidden=""):
+def gen_full_solution(colors, operators, restrictions, goal, max_solutions=5, testV=False,required="",forbidden=""):
     """Safe version with comprehensive error handling"""
     try:
         # Input validation
@@ -960,6 +964,37 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
         if testV:
             return f"Calculation failed: {str(e)}"
         raise
+
+def calc_full_solution(resexpr,solexpr):
+    output = []
+    if resexpr == "":
+        if solexpr == "":
+            return "Error: No inputs detected"
+        else:
+            sole = set_cards(solexpr)
+            output.append(f"Solution set has {len(sole)} cards\n")
+            output.append(f"    {', '.join(sole)}\n")
+            return "\n".join(output)
+    else:
+        if solexpr == "":
+            rese = parseR(resexpr)
+            output.append(f"New universe has {len(rese)} cards\n")
+            output.append(f"    {', '.join(rese)}\n")
+            return "\n".join(output)
+        else:
+            fullsol = intersect(parseR(resexpr,calcV=True),set_cards(solexpr,calcV=True))
+            output.append(f"Solution set has {len(fullsol)} cards\n")
+            output.append(f"    {', '.join(fullsol)}\n")
+            return "\n".join(output)
+
+
+
+
+    # restriction = parseR(resexpr,calcV=True)
+    # solution = set_cards(solexpr,calcV=True)
+    # fullsol = intersect(restriction,solution)
+    # print(f"Solution set has {len(fullsol)} cards: {list(fullsol)}")
+
 
 
 
