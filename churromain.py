@@ -587,7 +587,7 @@ def parseR(expr, testV = False):
             current_set = equal2(left_set, right_set)
         else:
             raise ValueError(f"Unknown operator: {operator}")
-        
+        print(current_set.copy())
         all_results.intersection_update(current_set.copy())  # Store this intermediate result
     # Return intersection of all intermediate results
     final_set = set(all_results)
@@ -598,12 +598,5 @@ def parseR(expr, testV = False):
             print(i)
     return f"New universe has {len(final_set)} cards: {list(final_set)}"
 
-
-
-
-
-
-# cProfile.run('quick_solutions(colors,operations,6,10)', sort='cumtime')
-
-# parseR("RnYcBcG")
-
+expr = "Y'u(GnB)cBcG=R"
+parseR(expr,testV=True)

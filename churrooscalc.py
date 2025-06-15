@@ -207,12 +207,15 @@ def get_set(token): # returns the set of cards given an expression
         print(f"Warning: Unknown token {token}")
         return []  # or raise an error
 
+
+
 def new_token(): # creates tokens for new expressions generated
     global token_counter
     token_counter += 1
     return f"T{token_counter}"
 
 def calcExpp(tokens):
+    print(tokens)
     """Safe expression evaluation with empty list handling"""
     if not tokens:
         raise ValueError("Empty expression cannot be evaluated")
@@ -254,7 +257,9 @@ def calcExpp(tokens):
         raise ValueError("Expression reduced to empty")
     return tokens[0]
 
+
 def parse(expr):
+
     """Safe parsing with validation"""
     if not expr or not isinstance(expr, str):
         raise ValueError("Invalid expression input")
@@ -262,13 +267,38 @@ def parse(expr):
     try:
         tokens = tokenize(expr)
 
-        # ✅ Strip out unsupported parentheses
-        tokens = [t for t in tokens if t not in ('(', ')')]
+        def find_matching_open(tokens, close_index):
+            count = 0
+            for j in range(close_index, -1, -1):
+                if tokens[j] == ")":
+                    count += 1
+                elif tokens[j] == "(":
+                    count -= 1
+                    if count == 0:
+                        return j
+            return None  # no matching '(' found
 
-        if not tokens:
-            raise ValueError("No tokens found in expression")
+        while ")" in tokens:
+            close_idx = tokens.index(")")
+            if close_idx + 1 < len(tokens) and tokens[close_idx + 1] == "'":
+                # prime applies to parenthesis block
+                open_idx = find_matching_open(tokens, close_idx)
+                inner_expr = tokens[open_idx + 1 : close_idx]
+                result_token = calcExpp(inner_expr)
+                result = prime(get_set(result_token))
+                tok = new_token()
+                computed_sets[tok] = result
+                # replace ( ... )' with tok
+                tokens[open_idx : close_idx + 2] = [tok]
+            else:
+                open_idx = find_matching_open(tokens, close_idx)
+                inner_expr = tokens[open_idx + 1 : close_idx]
+                result_token = calcExpp(inner_expr)
+                tokens[open_idx : close_idx + 1] = [result_token]
 
+        # Now evaluate the remaining expression (no parentheses left)
         final_token = calcExpp(tokens)
+        return final_token
 
         if not final_token:
             raise ValueError("Evaluation returned empty token")
@@ -277,6 +307,7 @@ def parse(expr):
 
     except Exception as e:
         raise ValueError(f"Failed to parse '{expr}': {str(e)}")
+
 
 def double_set(expr): # adds the double set cards to universe
     """ adds double setted cards to universe """
@@ -299,6 +330,8 @@ def set_cards(expr, testV=False, doubleWork=False): # returns the set of cards g
     if doubleWork:
         return mySet
     print(f"Solution set has {len(mySet)} cards: {list(mySet)}")
+
+
 
 def add_primes(tokens, num_primes): # adds primes in all valid positions
     if num_primes == 0:
@@ -625,14 +658,12 @@ def parseR(expr, testV = False, compV = False):
     
     if len(parts) < 3:
         raise ValueError("Need at least two expressions and one operator")
-    
     all_results = set(universe.keys())
     # Process each operator-right_expr pair sequentially
     for i in range(1, len(parts), 2):
         operator = parts[i]
         right_expr = parts[i+1]
         left_expr = parts[i-1]
-        
         right_set = get_set(parse(right_expr))
         left_set = get_set(parse(left_expr))
         
@@ -642,7 +673,6 @@ def parseR(expr, testV = False, compV = False):
             current_set = equal2(left_set, right_set)
         else:
             raise ValueError(f"Unknown operator: {operator}")
-        
         all_results.intersection_update(current_set.copy())  # Store this intermediate result
     # Return intersection of all intermediate results
     final_set = set(all_results)
@@ -845,6 +875,8 @@ def calc_full_solution(colors, operators, restrictions, goal, max_solutions=5, t
             return f"Calculation failed: {str(e)}"
         raise
 
+
+# parseR(expr,testV=True)
 
 # tok = tokenize("RnGnB")
 # for it in generate_prime_variants(tok, 2,['c']):
