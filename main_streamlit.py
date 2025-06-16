@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v5.73")
+st.title("OS Calculator v5.87")
 
 # Define the order of cards for display
 CARD_ORDER = [
@@ -199,23 +199,11 @@ universeRefresher()
 
 # Double set input (optional)
 st.markdown("---")
-doubleSet = st.text_input(
-    "Enter the doubleset, if any. Enter N for none",
-    placeholder="Example: (RnB)'"
-)
 
-symdif = st.checkbox("Symmetric Difference")
-twosol = st.checkbox("Two Solutions (under construction)")
-
-reqCard = st.text_input("Enter required card, if any.",placeholder="Example: BGR")
-forbCard = st.text_input("Enter forbidden card, if any.",placeholder="Example: RY")
-
+st.subheader("What would you like to do?")
 selectMethod = st.selectbox(
-    "What would you like to do?",
-    [
-        '1 - Calculate a solution and/or restriction set',
-        '2 - Generate a solution given cubes'
-    ]
+    "",['1 - Calculate a solution and/or restriction set','2 - Generate a solution given cubes'],
+    label_visibility="collapsed"
 )
 
 # Initialize variables for different calculation methods
@@ -229,6 +217,15 @@ solutionsWanted = 1
 # Show appropriate inputs based on selected method
 if selectMethod.startswith('1'):
     # Set expression input
+    st.markdown("##### Variations")
+    uninter = st.checkbox("u and n Interchangeable 🚧")
+    vzinter = st.checkbox("v and z Interchangeable 🚧")
+    symdif = st.checkbox("Symmetric Difference")
+    doubleSet = st.text_input(
+        "Enter the doubleset, if any. Enter N for none",
+        placeholder="Example: (RnB)'"
+    )
+    st.markdown("##### Expression Input")
     restriction_statement = st.text_input(
         "Enter the restriction statement (if any)", 
         placeholder="Example: BuG'cR=(YnG)=GuR'"
@@ -240,6 +237,21 @@ if selectMethod.startswith('1'):
 
 elif selectMethod.startswith('2'):
     # Full solution inputs (not implemented)
+    st.markdown("##### Variations")
+    uninter = st.checkbox("u and n Interchangeable 🚧")
+    vzinter = st.checkbox("v and z Interchangeable 🚧")
+    symdif = st.checkbox("Symmetric Difference")
+    mops = st.checkbox("Multiple Operations 🚧")
+    twosol = st.checkbox("Two Solutions 🚧")
+    nonull = st.checkbox("No Null Restrictions 🚧")
+    bkwild = st.checkbox("Blank Card Wild 🚧")
+    doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none",placeholder="Example: (RnB)'")
+    wild_cube = st.text_input("Enter wild cube, if any 🚧", placeholder ="Example: -")
+    reqCard = st.text_input("Enter required card, if any",placeholder="Example: BGR")
+    forbCard = st.text_input("Enter forbidden card, if any",placeholder="Example: RY")
+    
+    st.markdown("##### Resource Input")
+    
     colorMat = st.text_input(
         "Enter color cubes", 
         placeholder="Example: BVRZGY"
