@@ -6,7 +6,7 @@ import base64
 from io import BytesIO
 import uuid
 
-st.title("OS Calculator v5.71")
+st.title("OS Calculator v5.73")
 
 # Define the order of cards for display
 CARD_ORDER = [
@@ -204,14 +204,16 @@ doubleSet = st.text_input(
     placeholder="Example: (RnB)'"
 )
 
+symdif = st.checkbox("Symmetric Difference")
+twosol = st.checkbox("Two Solutions (under construction)")
+
 reqCard = st.text_input("Enter required card, if any.",placeholder="Example: BGR")
 forbCard = st.text_input("Enter forbidden card, if any.",placeholder="Example: RY")
 
-# Calculation method selection
 selectMethod = st.selectbox(
     "What would you like to do?",
     [
-        '1 - Calculate a solution and/or restriction set (currently under construction)',
+        '1 - Calculate a solution and/or restriction set',
         '2 - Generate a solution given cubes'
     ]
 )
@@ -273,6 +275,12 @@ if st.button("Run calculation", use_container_width=True, type="primary"):
         # Process doubleset if provided
         if doubleSet != "N" and doubleSet != "":
             double_set(doubleSet)
+
+        if symdif:
+            churrooscalc.op_map['-'] = churrooscalc.symdif
+        else:
+            churrooscalc.op_map['-'] = churrooscalc.minus
+
 
         # Execute selected calculation method
         if selectMethod.startswith('1'):
