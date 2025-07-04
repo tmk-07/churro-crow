@@ -5,10 +5,12 @@ import os
 import base64
 from io import BytesIO
 import uuid
+import random
+import time
 
 def start_screen():
     # Centered title
-    st.markdown("<h1 style='text-align: center;'>Onsets Tools v1.22</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Onsets Tools v1.3</h1>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -393,6 +395,109 @@ def main_app1():
 def main_app2():
     st.title("Padding Practice")
     st.markdown("Under construction 🚧")
+
+    # -------------------
+    # Question bank
+    # -------------------
+    QUESTION_BANK = [
+        ("7 + 6", "13"),
+        ("12 - 5", "7"),
+        ("3 x 4", "12"),
+        ("9 / 3", "3"),
+        ("8 + 9", "17"),
+        ("14 - 6", "8"),
+        ("6 x 7", "42"),
+        ("20 / 5", "4"),
+        ("11 + 13", "24"),
+        ("5 x 5", "25"),
+        ("18 / 6", "3"),
+        ("10 + 15", "25"),
+        ("9 x 9", "81"),
+        ("16 - 9", "7"),
+        ("6 + 8", "14")
+    ]
+
+    # -------------------
+    # Initialize session state
+    # -------------------
+    if "quiz_started" not in st.session_state:
+        st.session_state.quiz_started = False
+        st.session_state.current_index = 0
+        st.session_state.score = 0
+        st.session_state.start_time = None
+        st.session_state.user_answer = ""
+        st.session_state.questions = random.sample(QUESTION_BANK, len(QUESTION_BANK))
+
+    # -------------------
+    # Start screen
+    # -------------------
+    def start_quiz():
+        st.session_state.quiz_started = True
+        st.session_state.start_time = time.time()
+        st.session_state.score = 0
+        st.session_state.current_index = 0
+        st.session_state.user_answer = ""
+        st.session_state.questions = random.sample(QUESTION_BANK, len(QUESTION_BANK))
+
+    st.title("🧮 2-Minute Math Challenge")
+
+    if not st.session_state.quiz_started:
+        st.markdown("Answer as many questions as you can in **2 minutes**!")
+        if st.button("Start Quiz"):
+            start_quiz()
+        st.stop()
+
+    # -------------------
+    # Timer logic
+    # -------------------
+    elapsed = time.time() - st.session_state.start_time
+    remaining = 120 - int(elapsed)
+
+    if remaining <= 0:
+        st.session_state.quiz_started = False
+        st.markdown(f"⏱️ Time's up! You scored **{st.session_state.score}** out of {len(st.session_state.questions)}.")
+        if st.button("Try Again"):
+            start_quiz()
+        st.stop()
+
+    st.markdown(f"⏱️ Time remaining: **{remaining} seconds**")
+
+    # -------------------
+    # Current question
+    # -------------------
+    question, correct_answer = st.session_state.questions[st.session_state.current_index]
+    st.subheader(f"Question {st.session_state.current_index + 1}: {question}")
+
+    # ✅ Use a local variable to read input
+    user_answer = st.text_input("Your Answer:", key="user_answer", label_visibility="collapsed")
+
+    # ✅ Submit button
+    if st.button("Submit"):
+        if user_answer.strip() == correct_answer:
+            st.session_state.score += 1
+
+        # Move to next question
+        st.session_state.current_index += 1
+
+        # Clear answer for next question (will be reset in next run)
+        st.session_state.user_answer = ""
+
+        # ✅ Check if quiz is over
+        if st.session_state.current_index >= len(st.session_state.questions):
+            st.session_state.quiz_started = False
+            st.markdown("🎉 You've completed all questions!")
+            st.markdown(f"✅ Final Score: **{st.session_state.score}** out of {len(st.session_state.questions)}")
+            if st.button("Play Again"):
+                start_quiz()
+            st.stop()
+        else:
+            st.rerun()
+
+
+
+
+
+
 
     if st.button("back to home"):
         st.session_state.page = "start"
