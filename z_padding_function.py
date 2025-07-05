@@ -104,8 +104,7 @@ def padding_practice():
                 st.session_state.feedback = ("Please enter an answer", "warning")
                 return
                 
-            user_num = int(user_answer)
-            if user_num == st.session_state.current_q[1]:
+            if user_answer.strip() == st.session_state.current_q[1]:
                 st.session_state.score += 1
                 st.session_state.feedback = ("Correct!", "success")
                 # Move to next question
@@ -149,7 +148,7 @@ def padding_practice():
     # Answer input with form for Enter key support
     with st.form("answer_form", clear_on_submit=True):
         # Empty input with no placeholder
-        answer = st.number_input("Your answer:", step=1, format="%d", value=None)
+        answer = st.text_input("Your answer:", step=1, format="%d", value=None)
         submitted = st.form_submit_button("Submit")
         
         if submitted:
