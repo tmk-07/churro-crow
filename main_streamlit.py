@@ -14,7 +14,7 @@ from z_driller import driller
 
 def start_screen():
     # Centered title
-    st.markdown("<h1 style='text-align: center;'>Onsets Tools v1.45</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Onsets Tools</h1>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
