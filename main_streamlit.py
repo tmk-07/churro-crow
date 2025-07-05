@@ -7,8 +7,10 @@ from io import BytesIO
 import uuid
 import random
 import time
-from padding_function import padding_practice
-from calc_function import calc_function
+from datetime import datetime, timedelta
+from z_padding_function import padding_practice
+from z_calc_function import calc_function
+from z_driller import driller
 
 def start_screen():
     # Centered title
