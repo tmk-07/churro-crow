@@ -86,8 +86,6 @@ def padding_practice():
     if 'last_timer_update' not in st.session_state:  # ADD THIS
         st.session_state.last_timer_update = time.time()
 
-    # Question bank - (question, answer) pairs
-    questions = resquestions
 
     def start_quiz():
         st.session_state.quiz_active = True
@@ -114,8 +112,16 @@ def padding_practice():
             st.session_state.feedback = (f"Wrong.", "error")
 
     # Main app layout
-    st.title("2-Minute Padding Quiz check v")
+    st.title("OS Quick Padding Practice")
+    
+    qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice"))
+    if qopt == "Padding Practice":
+        questions = setquestions
+    elif qopt == "Restriction Practice":
+        questions = resquestions
+
     st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
+
 
     # Start quiz button
     if not st.session_state.quiz_active:
