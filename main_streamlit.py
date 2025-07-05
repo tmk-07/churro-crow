@@ -46,38 +46,6 @@ def start_screen():
             st.session_state.page = "main3"
             st.rerun()
 
-resquestions = [
-        ("R c R", 'z'),
-        ("B c B", 'z'),
-        ("G c G", 'z'),
-        ("Y c Y", 'z'),
-
-        ("R c V", 'z'),
-        ("R c Z", 'r'),
-        ("B c V", 'z'),
-        ("B c Z", 'b'),
-        ("Y c V", 'z'),
-        ("Y c Z", 'y'),
-        ("G c V", 'z'),
-        ("G c Z", 'g'),
-
-        ("B c B'", 'b'),
-        ("R c R'", 'r'),
-        ("Y c Y'", 'y'),
-        ("G c G'", 'g'),
-
-        ("B' c B", "b'"),
-        ("R' c R", "r'"),
-        ("Y' c Y", "y'"),
-        ("G' c G", "g'"),
-
-        ("B' = B", "v"),
-        ("R' = R", "v"),
-        ("Y' = Y", "v"),
-        ("G' = G", "v"),
-    ]
-
-
 
 
 if "page" not in st.session_state:
