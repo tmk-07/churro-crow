@@ -66,6 +66,48 @@ setquestions = [
         ("V u G", 'v'),
         ("V u Y", 'v'),
 
+        ("B u B'", 'v'),
+        ("R' u R", 'v'),
+        ("G u G'", 'v'),
+        ("Y' u Y'", 'v'),
+
+        ("B' n B", 'z'),
+        ("R n R'", 'z'),
+        ("G' n G", 'z'),
+        ("Y n Y'", 'z'),
+
+        ("B - B", 'z'),
+        ("R - R", 'z'),
+        ("G - G", 'z'),
+        ("Y - Y", 'z'),
+
+        ("B - B'", 'b'),
+        ("R - R'", 'r'),
+        ("G - G'", 'g'),
+        ("Y - Y'", 'y'),
+
+        ("B' - B", "b'"),
+        ("R' - R", "r'"),
+        ("G' - G", "g'"),
+        ("Y' - Y", "y'"),
+
+        ("V - B", "b'"),
+        ("V - R", "r'"),
+        ("V - G", "g'"),
+        ("V - Y", "y'"),
+
+        ("Z - B", 'z'),
+        ("Z - R", 'z'),
+        ("Z - G", 'z'),
+        ("Z - Y", 'z'),
+
+        ("V - Z", 'v'),
+        ("Z - V", 'z'),
+        ("V n Z", 'z'),
+        ("Z u V", 'v'),
+
+
+
 ]
 def padding_practice():
     # Initialize session state - ADDED LAST_TIMER_UPDATE
@@ -101,8 +143,8 @@ def padding_practice():
         if not user_answer.strip():
             st.session_state.feedback = ("Please enter an answer", "warning")
             return
-                
-        if user_answer.strip() == st.session_state.current_q[1]:
+        user_answer_lower = user_answer.strip().lower() 
+        if user_answer_lower.strip() == st.session_state.current_q[1]:
             st.session_state.score += 1
             st.session_state.feedback = ("Correct!", "success")
             # Move to next question
@@ -121,7 +163,7 @@ def padding_practice():
         questions = resquestions
 
     st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
-
+    st.write("Adding sym diff padding practice in the future")
 
     # Start quiz button
     if not st.session_state.quiz_active:
@@ -133,19 +175,24 @@ def padding_practice():
     time_left = max((st.session_state.end_time - now).total_seconds(), 0)
 
     # Display timer
-    timer_placeholder = st.empty()
-    timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
-    timer_placeholder.subheader(timer_text)
+    if time_left > 0:
+        timer_placeholder = st.empty()
+        timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
+        timer_placeholder.subheader(timer_text)
 
     # Quiz ended when time's up
     if time_left <= 0:
         st.session_state.quiz_active = False
         st.balloons()
         st.subheader(f"⏰ Time's up! Final Score: {st.session_state.score}")
-        st.write(f"Total questions attempted: {st.session_state.question_counter}")
+        st.write("lmk if im missing any questions")
         if st.button("Play Again"):
             start_quiz()
+        if st.button("Back to Home"):
+            st.session_state.page = "start"
+            st.rerun()
         st.stop()
+        
 
     # Display current question
     st.subheader(f"Question: {st.session_state.current_q[0]} ?")
