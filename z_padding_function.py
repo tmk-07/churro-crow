@@ -111,7 +111,7 @@ def padding_practice():
             st.session_state.current_q = random.choice(questions)
             st.session_state.question_counter += 1
         else:
-            st.session_state.feedback = (f"Wrong! Correct answer is: {st.session_state.current_q[1]}", "error")
+            st.session_state.feedback = (f"Wrong.", "error")
 
     # Main app layout
     st.title("2-Minute Padding Quiz check v")
@@ -142,7 +142,7 @@ def padding_practice():
         st.stop()
 
     # Display current question
-    st.subheader(f"Question: {st.session_state.current_q[0]} = ?")
+    st.subheader(f"Question: {st.session_state.current_q[0]} ?")
 
     # FIXED THE INPUT FIELD
     with st.form("answer_form", clear_on_submit=True):
