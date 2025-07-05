@@ -427,20 +427,21 @@ def main_app2():
     import streamlit as st
     import time
     import random
+    from datetime import datetime, timedelta
 
     # Initialize session state
     if 'quiz_active' not in st.session_state:
         st.session_state.quiz_active = False
-    if 'start_time' not in st.session_state:
-        st.session_state.start_time = None
+    if 'end_time' not in st.session_state:
+        st.session_state.end_time = None
     if 'score' not in st.session_state:
         st.session_state.score = 0
     if 'current_q' not in st.session_state:
         st.session_state.current_q = None
     if 'feedback' not in st.session_state:
         st.session_state.feedback = None
-    if 'last_update' not in st.session_state:
-        st.session_state.last_update = time.time()
+    if 'last_rerun' not in st.session_state:
+        st.session_state.last_rerun = time.time()
     if 'question_counter' not in st.session_state:
         st.session_state.question_counter = 0
 
@@ -466,18 +467,16 @@ def main_app2():
 
     def start_quiz():
         st.session_state.quiz_active = True
-        st.session_state.start_time = time.time()
+        st.session_state.end_time = datetime.now() + timedelta(seconds=120)
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
         st.session_state.feedback = None
-        st.session_state.last_update = time.time()
         st.session_state.question_counter = 0
-        # Trigger an immediate rerun to start the timer
-        st.rerun()
+        st.session_state.last_rerun = time.time()
 
     def check_answer(user_answer):
         try:
-            if user_answer is None:
+            if user_answer is None or user_answer == "":
                 st.session_state.feedback = ("Please enter an answer", "warning")
                 return
                 
@@ -502,10 +501,9 @@ def main_app2():
         st.button("Start Quiz", on_click=start_quiz)
         st.stop()
 
-    # Timer logic - runs every time the script executes
-    current_time = time.time()
-    elapsed_time = current_time - st.session_state.start_time
-    time_left = max(120 - elapsed_time, 0)
+    # Timer logic
+    now = datetime.now()
+    time_left = max((st.session_state.end_time - now).total_seconds(), 0)
 
     # Display timer
     timer_placeholder = st.empty()
@@ -543,10 +541,9 @@ def main_app2():
         else:
             st.warning(message)
 
-    # Auto-refresh timer every second
-    if current_time - st.session_state.last_update >= 0.5:
-        st.session_state.last_update = time.time()
-        # Schedule a rerun in 0.5 seconds to keep the timer updating
+    # Timer update logic - separate from answer submission
+    if time.time() - st.session_state.last_rerun > 0.1:
+        st.session_state.last_rerun = time.time()
         st.rerun()
 
 def main_app3():
