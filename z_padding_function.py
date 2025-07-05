@@ -9,6 +9,65 @@ import random
 import time
 from datetime import datetime, timedelta
 
+resquestions = [
+        ("R c R", 'z'),
+        ("B c B", 'z'),
+        ("G c G", 'z'),
+        ("Y c Y", 'z'),
+
+        ("R c V", 'z'),
+        ("R c Z", 'r'),
+        ("B c V", 'z'),
+        ("B c Z", 'b'),
+        ("Y c V", 'z'),
+        ("Y c Z", 'y'),
+        ("G c V", 'z'),
+        ("G c Z", 'g'),
+
+        ("B c B'", 'b'),
+        ("R c R'", 'r'),
+        ("Y c Y'", 'y'),
+        ("G c G'", 'g'),
+
+        ("B' c B", "b'"),
+        ("R' c R", "r'"),
+        ("Y' c Y", "y'"),
+        ("G' c G", "g'"),
+
+        ("B' = B", "v"),
+        ("R' = R", "v"),
+        ("Y' = Y", "v"),
+        ("G' = G", "v"),
+
+        ("V = Z", "v"),
+        ("V c Z", "v"),
+        ("Z c V", "z"),
+
+        ("Z c B", "z"),
+        ("Z c R", "z"),
+        ("Z c Y", "z"),
+        ("Z c G", "z"),
+
+        ("Z = B", "b"),
+        ("Z = R", "r"),
+        ("Z = G", "g"),
+        ("Z = Y", "y"),
+
+    ]
+
+setquestions = [
+        ("V n B", 'b'),
+        ("V n R", 'r'),
+        ("V n G", 'g'),
+        ("V n Y", 'y'),
+
+        ("V u B", 'v'),
+        ("V u R", 'v'),
+        ("V u G", 'v'),
+        ("V u Y", 'v'),
+
+]
+
 def padding_practice():
 
     # Initialize session state
@@ -28,24 +87,7 @@ def padding_practice():
         st.session_state.question_counter = 0
 
     # Question bank - (question, answer) pairs
-    questions = [
-        ("5 + 7", 12),
-        ("9 - 4", 5),
-        ("6 × 3", 18),
-        ("15 ÷ 3", 5),
-        ("8 + 12", 20),
-        ("25 - 9", 16),
-        ("4 × 7", 28),
-        ("36 ÷ 6", 6),
-        ("13 + 8", 21),
-        ("17 - 5", 12),
-        ("9 × 4", 36),
-        ("42 ÷ 7", 6),
-        ("15 + 6", 21),
-        ("23 - 7", 16),
-        ("5 × 9", 45),
-        ("63 ÷ 9", 7)
-    ]
+    questions = resquestions
 
     def start_quiz():
         st.session_state.quiz_active = True
@@ -75,8 +117,8 @@ def padding_practice():
             st.session_state.feedback = ("Please enter a valid number", "warning")
 
     # Main app layout
-    st.title("⏱️ 2-Minute Math Quiz")
-    st.write("Test your arithmetic skills! You have 2 minutes to answer as many questions as possible.")
+    st.title("2-Minute Padding Quiz")
+    st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
     # Start quiz button
     if not st.session_state.quiz_active:
