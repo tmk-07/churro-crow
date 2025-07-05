@@ -67,10 +67,8 @@ setquestions = [
         ("V u Y", 'v'),
 
 ]
-
 def padding_practice():
-
-    # Initialize session state
+    # Initialize session state - ADDED LAST_TIMER_UPDATE
     if 'quiz_active' not in st.session_state:
         st.session_state.quiz_active = False
     if 'end_time' not in st.session_state:
@@ -85,6 +83,8 @@ def padding_practice():
         st.session_state.last_rerun = time.time()
     if 'question_counter' not in st.session_state:
         st.session_state.question_counter = 0
+    if 'last_timer_update' not in st.session_state:  # ADD THIS
+        st.session_state.last_timer_update = time.time()
 
     # Question bank - (question, answer) pairs
     questions = resquestions
@@ -97,23 +97,21 @@ def padding_practice():
         st.session_state.feedback = None
         st.session_state.question_counter = 0
         st.session_state.last_rerun = time.time()
+        st.session_state.last_timer_update = time.time()  # ADD THIS
 
     def check_answer(user_answer):
-        try:
-            if user_answer is None or user_answer == "":
-                st.session_state.feedback = ("Please enter an answer", "warning")
-                return
+        if not user_answer.strip():
+            st.session_state.feedback = ("Please enter an answer", "warning")
+            return
                 
-            if user_answer.strip() == st.session_state.current_q[1]:
-                st.session_state.score += 1
-                st.session_state.feedback = ("Correct!", "success")
-                # Move to next question
-                st.session_state.current_q = random.choice(questions)
-                st.session_state.question_counter += 1
-            else:
-                st.session_state.feedback = ("Wrong! Try again.", "error")
-        except ValueError:
-            st.session_state.feedback = ("Please enter a valid number", "warning")
+        if user_answer.strip() == st.session_state.current_q[1]:
+            st.session_state.score += 1
+            st.session_state.feedback = ("Correct!", "success")
+            # Move to next question
+            st.session_state.current_q = random.choice(questions)
+            st.session_state.question_counter += 1
+        else:
+            st.session_state.feedback = (f"Wrong! Correct answer is: {st.session_state.current_q[1]}", "error")
 
     # Main app layout
     st.title("2-Minute Padding Quiz")
@@ -130,7 +128,8 @@ def padding_practice():
 
     # Display timer
     timer_placeholder = st.empty()
-    timer_placeholder.subheader(f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}")
+    timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
+    timer_placeholder.subheader(timer_text)
 
     # Quiz ended when time's up
     if time_left <= 0:
@@ -145,10 +144,10 @@ def padding_practice():
     # Display current question
     st.subheader(f"Question: {st.session_state.current_q[0]} = ?")
 
-    # Answer input with form for Enter key support
+    # FIXED THE INPUT FIELD
     with st.form("answer_form", clear_on_submit=True):
-        # Empty input with no placeholder
-        answer = st.text_input("Your answer:", step=1, format="%d", value=None)
+        # Text input for the answer
+        answer = st.text_input("Your answer:", value="")
         submitted = st.form_submit_button("Submit")
         
         if submitted:
@@ -164,7 +163,10 @@ def padding_practice():
         else:
             st.warning(message)
 
-    # Timer update logic - separate from answer submission
-    if time.time() - st.session_state.last_rerun > 0.1:
-        st.session_state.last_rerun = time.time()
-        st.rerun()
+    # ADDED PROPER TIMER UPDATE LOGIC
+    current_time = time.time()
+    if current_time - st.session_state.last_timer_update > 0.5:
+        st.session_state.last_timer_update = current_time
+        st.experimental_rerun()
+
+
