@@ -114,7 +114,7 @@ def padding_practice():
             st.session_state.feedback = (f"Wrong! Correct answer is: {st.session_state.current_q[1]}", "error")
 
     # Main app layout
-    st.title("2-Minute Padding Quiz")
+    st.title("2-Minute Padding Quiz check v")
     st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
     # Start quiz button
@@ -167,6 +167,6 @@ def padding_practice():
     current_time = time.time()
     if current_time - st.session_state.last_timer_update > 0.5:
         st.session_state.last_timer_update = current_time
-        st.experimental_rerun()
+        st.rerun()
 
 
