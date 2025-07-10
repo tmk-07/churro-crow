@@ -109,6 +109,64 @@ setquestions = [
 
 
 ]
+
+symquestions = [
+        ("V n B", 'b'),
+        ("V n R", 'r'),
+        ("V n G", 'g'),
+        ("V n Y", 'y'),
+
+        ("V u B", 'v'),
+        ("V u R", 'v'),
+        ("V u G", 'v'),
+        ("V u Y", 'v'),
+
+        ("B u B'", 'v'),
+        ("R' u R", 'v'),
+        ("G u G'", 'v'),
+        ("Y' u Y'", 'v'),
+
+        ("B' n B", 'z'),
+        ("R n R'", 'z'),
+        ("G' n G", 'z'),
+        ("Y n Y'", 'z'),
+
+        ("B - B", 'z'),
+        ("R - R", 'z'),
+        ("G - G", 'z'),
+        ("Y - Y", 'z'),
+
+        ("B - B'", 'v'),
+        ("R - R'", 'v'),
+        ("G - G'", 'v'),
+        ("Y - Y'", 'v'),
+
+        ("B' - B", "v"),
+        ("R' - R", "v"),
+        ("G' - G", "v"),
+        ("Y' - Y", "v"),
+
+        ("V - B", "b'"),
+        ("V - R", "r'"),
+        ("V - G", "g'"),
+        ("V - Y", "y'"),
+
+        ("Z - B", 'b'),
+        ("Z - R", 'r'),
+        ("Z - G", 'g'),
+        ("Z - Y", 'y'),
+
+        ("V - Z", 'v'),
+        ("Z - V", 'v'),
+        ("V n Z", 'z'),
+        ("Z u V", 'v'),
+
+
+
+]
+
+
+
 def padding_practice():
     # Initialize session state - ADDED LAST_TIMER_UPDATE
     if 'quiz_active' not in st.session_state:
@@ -156,11 +214,13 @@ def padding_practice():
     # Main app layout
     st.title("OS Quick Padding Practice")
     
-    qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice"))
+    qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice","Padding (w/ SymDiff)"))
     if qopt == "Padding Practice":
         questions = setquestions
     elif qopt == "Restriction Practice":
         questions = resquestions
+    elif qopt == "Padding (w/ SymDiff)":
+        questions = symquestions
 
     st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
     st.write("Adding sym diff padding practice in the future")
