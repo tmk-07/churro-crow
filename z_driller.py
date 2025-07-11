@@ -12,7 +12,10 @@ def driller():
     st.title("Solution Finding Practice")
     st.markdown("Under construction 🚧")
 
-    st.image("onsets_chart.png")
+    if os.path.exists("onsets_chart.png"):
+        st.image("onsets_chart.png")
+    else:
+        st.error("Image file not found: onsets_chart.png")
 
     if st.button("back to home"):
         st.session_state.page = "start"
