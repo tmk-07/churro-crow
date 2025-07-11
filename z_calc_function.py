@@ -206,7 +206,7 @@ def calc_function():
 
     st.subheader("What would you like to do?")
     selectMethod = st.selectbox(
-        "",['1 - Calculate a solution and/or restriction set','2 - Generate a solution given cubes'],
+        " ",['1 - Calculate a solution and/or restriction set','2 - Generate a solution given cubes'],
         label_visibility="collapsed"
     )
 

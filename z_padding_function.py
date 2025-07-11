@@ -223,7 +223,7 @@ def padding_practice():
         questions = symquestions
 
     st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
-    st.write("Adding sym diff padding practice in the future")
+    st.write("The timer is kinda buggy")
 
     # Start quiz button
     if not st.session_state.quiz_active:
