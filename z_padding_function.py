@@ -69,7 +69,7 @@ setquestions = [
         ("B u B'", 'v'),
         ("R' u R", 'v'),
         ("G u G'", 'v'),
-        ("Y' u Y'", 'v'),
+        ("Y u Y'", 'v'),
 
         ("B' n B", 'z'),
         ("R n R'", 'z'),
