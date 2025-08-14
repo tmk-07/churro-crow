@@ -10,29 +10,29 @@ import time
 from datetime import datetime, timedelta
 
 resquestions = [
-        ("R c R", 'z'),
-        ("B c B", 'z'),
-        ("G c G", 'z'),
-        ("Y c Y", 'z'),
+        ("R ⊆ R", 'z'),
+        ("B ⊆ B", 'z'),
+        ("G ⊆ G", 'z'),
+        ("Y ⊆ Y", 'z'),
 
-        ("R c V", 'z'),
-        ("R c Z", 'r'),
-        ("B c V", 'z'),
-        ("B c Z", 'b'),
-        ("Y c V", 'z'),
-        ("Y c Z", 'y'),
-        ("G c V", 'z'),
-        ("G c Z", 'g'),
+        ("R ⊆ V", 'z'),
+        ("R ⊆ Z", 'r'),
+        ("B ⊆ V", 'z'),
+        ("B ⊆ Z", 'b'),
+        ("Y ⊆ V", 'z'),
+        ("Y ⊆ Z", 'y'),
+        ("G ⊆ V", 'z'),
+        ("G ⊆ Z", 'g'),
 
-        ("B c B'", 'b'),
-        ("R c R'", 'r'),
-        ("Y c Y'", 'y'),
-        ("G c G'", 'g'),
+        ("B ⊆ B'", 'b'),
+        ("R ⊆ R'", 'r'),
+        ("Y ⊆ Y'", 'y'),
+        ("G ⊆ G'", 'g'),
 
-        ("B' c B", "b'"),
-        ("R' c R", "r'"),
-        ("Y' c Y", "y'"),
-        ("G' c G", "g'"),
+        ("B' ⊆ B", "b'"),
+        ("R' ⊆ R", "r'"),
+        ("Y' ⊆ Y", "y'"),
+        ("G' ⊆ G", "g'"),
 
         ("B' = B", "v"),
         ("R' = R", "v"),
@@ -40,13 +40,13 @@ resquestions = [
         ("G' = G", "v"),
 
         ("V = Z", "v"),
-        ("V c Z", "v"),
-        ("Z c V", "z"),
+        ("V ⊆ Z", "v"),
+        ("Z ⊆ V", "z"),
 
-        ("Z c B", "z"),
-        ("Z c R", "z"),
-        ("Z c Y", "z"),
-        ("Z c G", "z"),
+        ("Z ⊆ B", "z"),
+        ("Z ⊆ R", "z"),
+        ("Z ⊆ Y", "z"),
+        ("Z ⊆ G", "z"),
 
         ("Z = B", "b"),
         ("Z = R", "r"),
@@ -55,81 +55,26 @@ resquestions = [
 
     ]
 
-setquestions = [
-        ("V n B", 'b'),
-        ("V n R", 'r'),
-        ("V n G", 'g'),
-        ("V n Y", 'y'),
-
-        ("V u B", 'v'),
-        ("V u R", 'v'),
-        ("V u G", 'v'),
-        ("V u Y", 'v'),
-
-        ("B u B'", 'v'),
-        ("R' u R", 'v'),
-        ("G u G'", 'v'),
-        ("Y u Y'", 'v'),
-
-        ("B' n B", 'z'),
-        ("R n R'", 'z'),
-        ("G' n G", 'z'),
-        ("Y n Y'", 'z'),
-
-        ("B - B", 'z'),
-        ("R - R", 'z'),
-        ("G - G", 'z'),
-        ("Y - Y", 'z'),
-
-        ("B - B'", 'b'),
-        ("R - R'", 'r'),
-        ("G - G'", 'g'),
-        ("Y - Y'", 'y'),
-
-        ("B' - B", "b'"),
-        ("R' - R", "r'"),
-        ("G' - G", "g'"),
-        ("Y' - Y", "y'"),
-
-        ("V - B", "b'"),
-        ("V - R", "r'"),
-        ("V - G", "g'"),
-        ("V - Y", "y'"),
-
-        ("Z - B", 'z'),
-        ("Z - R", 'z'),
-        ("Z - G", 'z'),
-        ("Z - Y", 'z'),
-
-        ("V - Z", 'v'),
-        ("Z - V", 'z'),
-        ("V n Z", 'z'),
-        ("Z u V", 'v'),
-
-
-
-]
-
 symquestions = [
-        ("V n B", 'b'),
-        ("V n R", 'r'),
-        ("V n G", 'g'),
-        ("V n Y", 'y'),
+        ("V ∩ B", 'b'),
+        ("V ∩ R", 'r'),
+        ("V ∩ G", 'g'),
+        ("V ∩ Y", 'y'),
 
-        ("V u B", 'v'),
-        ("V u R", 'v'),
-        ("V u G", 'v'),
-        ("V u Y", 'v'),
+        ("V ∪ B", 'v'),
+        ("V ∪ R", 'v'),
+        ("V ∪ G", 'v'),
+        ("V ∪ Y", 'v'),
 
-        ("B u B'", 'v'),
-        ("R' u R", 'v'),
-        ("G u G'", 'v'),
-        ("Y' u Y'", 'v'),
+        ("B ∪ B'", 'v'),
+        ("R' ∪ R", 'v'),
+        ("G ∪ G'", 'v'),
+        ("Y' ∪ Y'", 'v'),
 
-        ("B' n B", 'z'),
-        ("R n R'", 'z'),
-        ("G' n G", 'z'),
-        ("Y n Y'", 'z'),
+        ("B' ∩ B", 'z'),
+        ("R ∩ R'", 'z'),
+        ("G' ∩ G", 'z'),
+        ("Y ∩ Y'", 'z'),
 
         ("B - B", 'z'),
         ("R - R", 'z'),
@@ -158,14 +103,14 @@ symquestions = [
 
         ("V - Z", 'v'),
         ("Z - V", 'v'),
-        ("V n Z", 'z'),
-        ("Z u V", 'v'),
+        ("V ∩ Z", 'z'),
+        ("Z ∪ V", 'v'),
 
 
 
 ]
 
-uniquestions = [
+setquestions = [
         ("V ∩ B", 'b'),
         ("V ∩ R", 'r'),
         ("V ∩ G", 'g'),
@@ -266,9 +211,9 @@ def padding_practice():
             st.session_state.feedback = (f"Wrong.", "error")
 
     # Main app layout
-    st.title("OS Quick Padding Practice v")
+    st.title("OS Quick Padding Practice")
     
-    qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice","Padding (w/ SymDiff)","unicode symbols"))
+    qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice","Padding (w/ SymDiff)"))
     if qopt == "Padding Practice":
         questions = setquestions
     elif qopt == "Restriction Practice":
