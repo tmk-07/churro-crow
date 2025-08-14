@@ -217,15 +217,15 @@ def calc_function():
     # Show appropriate inputs based on selected method
 
     st.markdown("##### Variations")
-    uninter = st.checkbox("u and n Interchangeable 🚧")
-    vzinter = st.checkbox("v and z Interchangeable 🚧")
+    # uninter = st.checkbox("u and n Interchangeable 🚧")
+    # vzinter = st.checkbox("v and z Interchangeable 🚧")
     symdif = st.checkbox("Symmetric Difference")
-    mops = st.checkbox("Multiple Operations 🚧")
-    twosol = st.checkbox("Two Solutions 🚧")
-    nonull = st.checkbox("No Null Restrictions 🚧")
-    bkwild = st.checkbox("Blank Card Wild 🚧")
+    # mops = st.checkbox("Multiple Operations 🚧")
+    # twosol = st.checkbox("Two Solutions 🚧")
+    # nonull = st.checkbox("No Null Restrictions 🚧")
+    # bkwild = st.checkbox("Blank Card Wild 🚧")
     doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none",placeholder="Example: (RnB)'")
-    wild_cube = st.text_input("Enter wild cube, if any 🚧", placeholder ="Example: -")
+    # wild_cube = st.text_input("Enter wild cube, if any 🚧", placeholder ="Example: -")
     reqCard = st.text_input("Enter required card, if any",placeholder="Example: BGR")
     forbCard = st.text_input("Enter forbidden card, if any",placeholder="Example: RY")
     

@@ -223,7 +223,7 @@ def padding_practice():
         questions = symquestions
 
     st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
-    st.write("The timer is kinda buggy")
+
 
     # Start quiz button
     if not st.session_state.quiz_active:
@@ -282,4 +282,8 @@ def padding_practice():
         st.session_state.last_timer_update = current_time
         st.rerun()
 
+    st.write("The timer is kinda buggy")
 
+    if st.button("back to home"):
+        st.session_state.page = "start"
+        st.rerun()

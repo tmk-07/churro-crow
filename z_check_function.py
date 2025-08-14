@@ -216,8 +216,8 @@ def check_function():
 
 
     st.markdown("##### Variations")
-    uninter = st.checkbox("u and n Interchangeable 🚧")
-    vzinter = st.checkbox("v and z Interchangeable 🚧")
+    # uninter = st.checkbox("u and n Interchangeable 🚧")
+    # vzinter = st.checkbox("v and z Interchangeable 🚧")
     symdif = st.checkbox("Symmetric Difference")
     doubleSet = st.text_input(
         "Enter the doubleset, if any. Enter N for none",
