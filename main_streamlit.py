@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from z_padding_function import padding_practice
 from z_calc_function import calc_function
 from z_driller import driller
+# from z_check_function import check_function
 
 def start_screen():
     # Centered title
@@ -30,9 +31,13 @@ def start_screen():
     </style>
 """, unsafe_allow_html=True)
 
-        if st.button("Solution Finder / Checker", use_container_width=True):
-            st.session_state.page = "calc_function"
+        if st.button("Solution Checker", use_container_width=True):
+            st.session_state.page = "check_function"
             st.rerun()
+        
+        # if st.button("Solution Finder", use_container_width=True):
+        #     st.session_state.page = "calc_function"
+        #     st.rerun()
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
