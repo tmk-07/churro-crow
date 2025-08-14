@@ -43,13 +43,13 @@ def start_screen():
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-        if st.button("Padding Practice 🚧", use_container_width=True):
+        if st.button("Padding Practice", use_container_width=True):
             st.session_state.page = "padding_practice"
             st.rerun()
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-        if st.button("Solution Practice", use_container_width=True):
+        if st.button("Solution Practice 🚧", use_container_width=True):
             st.session_state.page = "driller"
             st.rerun()
 
