@@ -165,6 +165,60 @@ symquestions = [
 
 ]
 
+uniquestions = [
+        ("V ∩ B", 'b'),
+        ("V ∩ R", 'r'),
+        ("V ∩ G", 'g'),
+        ("V ∩ Y", 'y'),
+
+        ("V ∪ B", 'v'),
+        ("V ∪ R", 'v'),
+        ("V ∪ G", 'v'),
+        ("V ∪ Y", 'v'),
+
+        ("B ∪ B'", 'v'),
+        ("R' ∪ R", 'v'),
+        ("G ∪ G'", 'v'),
+        ("Y ∪ Y'", 'v'),
+
+        ("B' ∩ B", 'z'),
+        ("R ∩ R'", 'z'),
+        ("G' ∩ G", 'z'),
+        ("Y ∩ Y'", 'z'),
+
+        ("B - B", 'z'),
+        ("R - R", 'z'),
+        ("G - G", 'z'),
+        ("Y - Y", 'z'),
+
+        ("B - B'", 'b'),
+        ("R - R'", 'r'),
+        ("G - G'", 'g'),
+        ("Y - Y'", 'y'),
+
+        ("B' - B", "b'"),
+        ("R' - R", "r'"),
+        ("G' - G", "g'"),
+        ("Y' - Y", "y'"),
+
+        ("V - B", "b'"),
+        ("V - R", "r'"),
+        ("V - G", "g'"),
+        ("V - Y", "y'"),
+
+        ("Z - B", 'z'),
+        ("Z - R", 'z'),
+        ("Z - G", 'z'),
+        ("Z - Y", 'z'),
+
+        ("V - Z", 'v'),
+        ("Z - V", 'z'),
+        ("V ∩ Z", 'z'),
+        ("Z ∪ V", 'v'),
+
+
+
+]
 
 
 def padding_practice():
@@ -214,13 +268,15 @@ def padding_practice():
     # Main app layout
     st.title("OS Quick Padding Practice")
     
-    qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice","Padding (w/ SymDiff)"))
+    qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice","Padding (w/ SymDiff)","unicode symbols"))
     if qopt == "Padding Practice":
         questions = setquestions
     elif qopt == "Restriction Practice":
         questions = resquestions
     elif qopt == "Padding (w/ SymDiff)":
         questions = symquestions
+    elif qopt == "unicode symbols":
+        questions = uniquestions
 
     st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
