@@ -7,7 +7,77 @@ from io import BytesIO
 import uuid
 import random
 import time
-from datetime import datetime, timedelta
+import sqlite3
+from datetime import datetime, timedelta, timezone
+
+# --- LEADERBOARD: DB + API ---
+@st.cache_resource
+def get_conn():
+    conn = sqlite3.connect("leaderboard.db", check_same_thread=False)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            points INTEGER NOT NULL,
+            time_ms INTEGER NOT NULL,         -- lower is better (faster)
+            created_at TEXT NOT NULL          -- ISO timestamp (UTC)
+        )
+    """)
+    conn.commit()
+    return conn
+
+def add_score(username: str, points: int, time_ms: int):
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO scores (username, points, time_ms, created_at) VALUES (?, ?, ?, ?)",
+        (username, points, time_ms, datetime.now(timezone.utc).isoformat())
+    )
+    conn.commit()
+
+@st.cache_data(ttl=10)
+def get_leaderboard(limit=20):
+    # Sort by highest points, then fastest time, then earliest entry
+    conn = get_conn()
+    return conn.execute("""
+        SELECT username, points, time_ms, created_at
+        FROM scores
+        ORDER BY points DESC, time_ms ASC, created_at ASC
+        LIMIT ?
+    """, (limit,)).fetchall()
+
+
+# --- LEADERBOARD PAGE ---
+def leaderboard_page():
+    st.title("🏆 Leaderboard")
+
+    rows = get_leaderboard(20)
+    if rows:
+        # nice compact table
+        st.dataframe(
+            {
+                "#": list(range(1, len(rows)+1)),
+                "Player": [r[0] for r in rows],
+                "Points": [r[1] for r in rows],
+                "Time (s)": [round(r[2] / 1000, 2) for r in rows],
+                "When (UTC)": [r[3] for r in rows],
+            },
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.info("No scores yet — be the first!")
+
+    cols = st.columns(3)
+    if cols[0].button("⬅ Back to Home"):
+        st.session_state.page = "start"
+        st.rerun()
+    if cols[1].button("🔁 Refresh"):
+        get_leaderboard.clear()  # clear cache
+        st.rerun()
+
+
+
+
 
 resquestions = [
         ("R ⊆ R", 'z'),
@@ -184,17 +254,25 @@ def padding_practice():
         st.session_state.question_counter = 0
     if 'last_timer_update' not in st.session_state:  # ADD THIS
         st.session_state.last_timer_update = time.time()
+    if 'username' not in st.session_state:
+        st.session_state.username = ""
+    if 'start_ms' not in st.session_state:
+        st.session_state.start_ms = 0
+   
 
 
     def start_quiz():
         st.session_state.quiz_active = True
-        st.session_state.end_time = datetime.now() + timedelta(seconds=120)
+        st.session_state.end_time = datetime.now() + timedelta(seconds=60)
+        st.session_state.start_ms = int(time.time() * 1000)  # ADD
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
         st.session_state.feedback = None
         st.session_state.question_counter = 0
         st.session_state.last_rerun = time.time()
-        st.session_state.last_timer_update = time.time()  # ADD THIS
+        st.session_state.last_timer_update = time.time()
+
+
 
     def check_answer(user_answer):
         if not user_answer.strip():
@@ -227,12 +305,30 @@ def padding_practice():
 
 
     # Start quiz button
+        # Start quiz screen (when not active)
     if not st.session_state.quiz_active:
-        st.button("Start Quiz", on_click=start_quiz)
-        if st.button("back to home"):
+        st.session_state.username = st.text_input(
+            "Enter your name (for the leaderboard):",
+            value=st.session_state.username
+        )
+
+        cols = st.columns(3)
+        if cols[0].button("Start Quiz"):
+            if not st.session_state.username.strip():
+                st.warning("Please enter your name to start.")
+            else:
+                start_quiz()
+
+        if cols[1].button("🏆 View Leaderboard"):
+            st.session_state.page = "leaderboard"
+            st.rerun()
+
+        if cols[2].button("Back to Home"):
             st.session_state.page = "start"
             st.rerun()
+
         st.stop()
+
 
     # Timer logic
     now = datetime.now()
@@ -249,13 +345,33 @@ def padding_practice():
         st.session_state.quiz_active = False
         st.balloons()
         st.subheader(f"⏰ Time's up! Final Score: {st.session_state.score}")
-        st.write("lmk if im missing any questions")
-        if st.button("Play Again"):
+
+        # Compute elapsed from start_ms
+        if st.session_state.start_ms:
+            elapsed_ms = int(time.time() * 1000) - st.session_state.start_ms
+        else:
+            elapsed_ms = 60_000  # fallback
+
+        # Save score button
+        if st.button("💾 Submit Score to Leaderboard"):
+            add_score(st.session_state.username or "Player", st.session_state.score, elapsed_ms)
+            get_leaderboard.clear()  # refresh cache
+            st.success("Score saved!")
+
+        cols = st.columns(3)
+        if cols[0].button("🏆 View Leaderboard"):
+            st.session_state.page = "leaderboard"
+            st.rerun()
+
+        if cols[1].button("🔁 Play Again"):
             start_quiz()
-        if st.button("Back to Home"):
+
+        if cols[2].button("Back to Home"):
             st.session_state.page = "start"
             st.rerun()
+
         st.stop()
+
         
 
     # Display current question
@@ -291,3 +407,8 @@ def padding_practice():
     if st.button("back to home"):
         st.session_state.page = "start"
         st.rerun()
+
+    elif st.session_state.page == "leaderboard":
+        leaderboard_page()
+
+    
