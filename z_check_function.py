@@ -10,7 +10,7 @@ import time
 
 def check_function():
 
-    st.title("OS Solution Checker 1.0")
+    st.title("OS Solution Checker")
 
     # Define the order of cards for display
     CARD_ORDER = [
@@ -202,7 +202,7 @@ def check_function():
     # --- User Input Section ---
 
     # Double set input (optional)
-    st.markdown("---")
+    # st.markdown("---")
 
   
 
@@ -270,3 +270,5 @@ def check_function():
     if st.button("back to home"):
         st.session_state.page = "start"
         st.rerun()
+
+    st.markdown("variations under construction: un, vz interchangeable")
