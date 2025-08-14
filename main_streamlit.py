@@ -34,6 +34,8 @@ def start_screen():
         if st.button("Solution Checker", use_container_width=True):
             st.session_state.page = "check_function"
             st.rerun()
+
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         if st.button("Solution Finder", use_container_width=True):
             st.session_state.page = "calc_function"
