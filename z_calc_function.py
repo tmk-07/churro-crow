@@ -10,7 +10,7 @@ import time
 
 def calc_function():
 
-    st.title("OS Calculator v5.88")
+    st.title("OS Solution Generator")
 
     # Define the order of cards for display
     CARD_ORDER = [
@@ -202,13 +202,9 @@ def calc_function():
     # --- User Input Section ---
 
     # Double set input (optional)
-    st.markdown("---")
+    # st.markdown("---")
 
-    st.subheader("What would you like to do?")
-    selectMethod = st.selectbox(
-        " ",['1 - Calculate a solution and/or restriction set','2 - Generate a solution given cubes'],
-        label_visibility="collapsed"
-    )
+
 
     # Initialize variables for different calculation methods
     setName = ""
@@ -219,66 +215,45 @@ def calc_function():
     solutionsWanted = 1
 
     # Show appropriate inputs based on selected method
-    if selectMethod.startswith('1'):
-        # Set expression input
-        st.markdown("##### Variations")
-        uninter = st.checkbox("u and n Interchangeable 🚧")
-        vzinter = st.checkbox("v and z Interchangeable 🚧")
-        symdif = st.checkbox("Symmetric Difference")
-        doubleSet = st.text_input(
-            "Enter the doubleset, if any. Enter N for none",
-            placeholder="Example: (RnB)'"
-        )
-        st.markdown("##### Expression Input")
-        restriction_statement = st.text_input(
-            "Enter the restriction statement (if any)", 
-            placeholder="Example: BuG'cR=(YnG)=GuR'"
-        )
-        solution_statement = st.text_input(
-            "Enter the solution expression (if any)",
-            placeholder="Example: (R-Y)'u(B'nY)"
-        )
 
-    elif selectMethod.startswith('2'):
-        # Full solution inputs (not implemented)
-        st.markdown("##### Variations")
-        uninter = st.checkbox("u and n Interchangeable 🚧")
-        vzinter = st.checkbox("v and z Interchangeable 🚧")
-        symdif = st.checkbox("Symmetric Difference")
-        mops = st.checkbox("Multiple Operations 🚧")
-        twosol = st.checkbox("Two Solutions 🚧")
-        nonull = st.checkbox("No Null Restrictions 🚧")
-        bkwild = st.checkbox("Blank Card Wild 🚧")
-        doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none",placeholder="Example: (RnB)'")
-        wild_cube = st.text_input("Enter wild cube, if any 🚧", placeholder ="Example: -")
-        reqCard = st.text_input("Enter required card, if any",placeholder="Example: BGR")
-        forbCard = st.text_input("Enter forbidden card, if any",placeholder="Example: RY")
-        
-        st.markdown("##### Resource Input")
-        
-        colorMat = st.text_input(
-            "Enter color cubes", 
-            placeholder="Example: BVRZGY"
-        )
-        operationMat = st.text_input(
-            "Enter operation cubes", 
-            placeholder="Example: nnu'-"
-        )
-        restrictionMat = st.text_input(
-            "Enter restriction cubes (if any)", 
-            placeholder="Example: =c"
-        )
-        enterGoal = st.number_input(
-            "What is the goal?", 
-            min_value=0, 
-            step=1
-        )
-        solutionsWanted = st.number_input(
-            "How many solutions wanted?", 
-            min_value=1, 
-            step=1,
-            value=5
-        )
+    st.markdown("##### Variations")
+    uninter = st.checkbox("u and n Interchangeable 🚧")
+    vzinter = st.checkbox("v and z Interchangeable 🚧")
+    symdif = st.checkbox("Symmetric Difference")
+    mops = st.checkbox("Multiple Operations 🚧")
+    twosol = st.checkbox("Two Solutions 🚧")
+    nonull = st.checkbox("No Null Restrictions 🚧")
+    bkwild = st.checkbox("Blank Card Wild 🚧")
+    doubleSet = st.text_input("Enter the doubleset, if any. Enter N for none",placeholder="Example: (RnB)'")
+    wild_cube = st.text_input("Enter wild cube, if any 🚧", placeholder ="Example: -")
+    reqCard = st.text_input("Enter required card, if any",placeholder="Example: BGR")
+    forbCard = st.text_input("Enter forbidden card, if any",placeholder="Example: RY")
+    
+    st.markdown("##### Resource Input")
+    
+    colorMat = st.text_input(
+        "Enter color cubes", 
+        placeholder="Example: BVRZGY"
+    )
+    operationMat = st.text_input(
+        "Enter operation cubes", 
+        placeholder="Example: nnu'-"
+    )
+    restrictionMat = st.text_input(
+        "Enter restriction cubes (if any)", 
+        placeholder="Example: =c"
+    )
+    enterGoal = st.number_input(
+        "What is the goal?", 
+        min_value=0, 
+        step=1
+    )
+    solutionsWanted = st.number_input(
+        "How many solutions wanted?", 
+        min_value=1, 
+        step=1,
+        value=5
+    )
 
 
     # --- Calculation Execution ---
@@ -299,52 +274,48 @@ def calc_function():
 
 
             # Execute selected calculation method
-            if selectMethod.startswith('1'):
-                # Calculate solution set
-                output = calc_full_solution(restriction_statement, solution_statement)
-                
-            elif selectMethod.startswith('2'):
+
                 # Validate inputs for full solution
-                valid, message = validate_inputs(
-                    list(colorMat), 
-                    list(operationMat), 
-                    list(restrictionMat)
-                )
-                
-                if not valid:
-                    st.error(message)
-                elif restrictionMat == "":
-                    output = quick_solutions(colorMat,operationMat,enterGoal,solutionsWanted,testV=True,opt3v=True)
-                else:
-                    # Calculate full solution (not implemented)
-                    if reqCard != "N" and reqCard != "":
-                        if reqCard not in churrooscalc.universe:
-                            output = "Required card not in universe"
-                        elif forbCard != "n" and forbCard != "": 
-                            output = gen_full_solution(
-                                colorMat, 
-                                list(operationMat), 
-                                list(restrictionMat), 
-                                enterGoal, 
-                                solutionsWanted, 
-                                testV=True,required=reqCard,forbidden=forbCard)
-                        else:    
-                            output = gen_full_solution(
-                                colorMat, 
-                                list(operationMat), 
-                                list(restrictionMat), 
-                                enterGoal, 
-                                solutionsWanted, 
-                                testV=True,required=reqCard)
-                    else:
+            valid, message = validate_inputs(
+                list(colorMat), 
+                list(operationMat), 
+                list(restrictionMat)
+            )
+            
+            if not valid:
+                st.error(message)
+            elif restrictionMat == "":
+                output = quick_solutions(colorMat,operationMat,enterGoal,solutionsWanted,testV=True,opt3v=True)
+            else:
+                # Calculate full solution (not implemented)
+                if reqCard != "N" and reqCard != "":
+                    if reqCard not in churrooscalc.universe:
+                        output = "Required card not in universe"
+                    elif forbCard != "n" and forbCard != "": 
                         output = gen_full_solution(
-                                colorMat, 
-                                list(operationMat), 
-                                list(restrictionMat), 
-                                enterGoal, 
-                                solutionsWanted, 
-                                testV=True)
-                    
+                            colorMat, 
+                            list(operationMat), 
+                            list(restrictionMat), 
+                            enterGoal, 
+                            solutionsWanted, 
+                            testV=True,required=reqCard,forbidden=forbCard)
+                    else:    
+                        output = gen_full_solution(
+                            colorMat, 
+                            list(operationMat), 
+                            list(restrictionMat), 
+                            enterGoal, 
+                            solutionsWanted, 
+                            testV=True,required=reqCard)
+                else:
+                    output = gen_full_solution(
+                            colorMat, 
+                            list(operationMat), 
+                            list(restrictionMat), 
+                            enterGoal, 
+                            solutionsWanted, 
+                            testV=True)
+                
             
             # Update status when complete
             status.update(label="✅ Calculations complete!", state="complete")
@@ -357,3 +328,5 @@ def calc_function():
     if st.button("back to home"):
         st.session_state.page = "start"
         st.rerun()
+
+    st.markdown("variations under construction: un, vz interchangeable. mops. tops. no null. bk wild. wild cube. 2 sol")
