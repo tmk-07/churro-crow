@@ -228,6 +228,9 @@ def padding_practice():
     # Start quiz button
     if not st.session_state.quiz_active:
         st.button("Start Quiz", on_click=start_quiz)
+        if st.button("back to home"):
+            st.session_state.page = "start"
+            st.rerun()
         st.stop()
 
     # Timer logic
