@@ -266,7 +266,7 @@ def padding_practice():
             st.session_state.feedback = (f"Wrong.", "error")
 
     # Main app layout
-    st.title("OS Quick Padding Practice")
+    st.title("OS Quick Padding Practice v")
     
     qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice","Padding (w/ SymDiff)","unicode symbols"))
     if qopt == "Padding Practice":
