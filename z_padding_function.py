@@ -140,6 +140,7 @@ setquestions = [
 ]
 
 def padding_practice():
+    elapsed_ms = 0
     # Session state
     for k, v in {
         "score_saved": False, "saved_row_id": None, "quiz_active": False,
