@@ -18,7 +18,7 @@ def get_leaderboard(limit=20):
     try:
         service = get_sheet_service()
         result = service.spreadsheets().values().get(
-            spreadsheetId=st.secrets["SHEET_ID"],
+            spreadsheetId=st.secrets["1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"],
             range="Scores!A:D"  # Columns: Name, Points, Time(ms), Timestamp
         ).execute()
         values = result.get('values', [])
@@ -34,7 +34,7 @@ def add_score(username: str, points: int, time_ms: int):
         values = [[username, points, time_ms, timestamp]]
         body = {'values': values}
         service.spreadsheets().values().append(
-            spreadsheetId=st.secrets["SHEET_ID"],
+            spreadsheetId=st.secrets["1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"],
             range="Scores",
             valueInputOption="USER_ENTERED",
             body=body
@@ -66,17 +66,17 @@ def leaderboard_page():
 
     # Navigation buttons
     c1, c2 = st.columns(2)
-    if c1.button("⬅ Back to Home",key="leaderboard_home_btn"):
+    if c1.button("⬅ Back to Home",key="home_btn"):
         st.session_state.page = "start"
         st.rerun()
-    if c2.button("🔁 Refresh Leaderboard","refresh_leaderboard_btn"):
+    if c2.button("🔁 Refresh Leaderboard"):
         st.rerun()
 
 # Update the init_sheet function
 def init_sheet():
     service = get_sheet_service()
     service.spreadsheets().values().update(
-        spreadsheetId=st.secrets["SHEET_ID"],
+        spreadsheetId=st.secrets["1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"],
         range="Scores!A1",
         valueInputOption="RAW",
         body={"values": [["Player", "Points", "Time (ms)", "When (UTC)"]]}
