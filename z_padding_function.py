@@ -345,7 +345,7 @@ def padding_practice():
     with st.form("answer_form", clear_on_submit=True):
         # Text input for the answer
         answer = st.text_input("Your answer:", value="")
-        submitted = st.form_submit_button("Submit",key="submit_answer_btn")
+        submitted = st.form_submit_button("Submit")
         
         if submitted:
             check_answer(answer)
