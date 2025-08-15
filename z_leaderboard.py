@@ -78,7 +78,7 @@ def get_leaderboard(limit=20):
         st.error(f"Error loading leaderboard: {str(e)}")
         return []
 
-def add_score(username: str, points: int, time_ms: int):
+def add_score(username: str, points: int):
     try:
         service = get_sheet_service()
         timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
@@ -86,7 +86,7 @@ def add_score(username: str, points: int, time_ms: int):
         body = {'values': values}
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
-            range="Scores",
+            range="Scores!A:C",
             valueInputOption="USER_ENTERED",
             body=body
         ).execute()
@@ -107,7 +107,7 @@ def leaderboard_page():
     if scores:
         df = pd.DataFrame(scores, columns=["Player", "Points", "Date"])
         df["Points"] = pd.to_numeric(df["Points"], errors="coerce").fillna(0).astype(int)
-        df = df.sort_values(by=["Points", "Date"], ascending=[False, True])
+        df = df.sort_values(by=["Points", "Date"], ascending=[False, False])
         st.dataframe(df[["Player", "Points", "Date"]], hide_index=True)
     else:
         st.info("No scores yet - be the first!")
