@@ -205,27 +205,51 @@ def padding_practice():
         elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
         save_col, lead_col, play_col, home_col = st.columns(4)
 
+        def write_test_row(username: str, points: int, time_ms: int):
+            """Append (username, points, time_ms, timestamp UTC) to Scores!A:D."""
+            service = get_sheets_service()
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            body = {"values": [[username, int(points), int(time_ms), timestamp]]}
+            try:
+                result = service.spreadsheets().values().append(
+                    spreadsheetId=SHEET_ID,
+                    range="Scores!A:D",          # tab must be named "Scores"
+                    valueInputOption="USER_ENTERED",
+                    body=body
+                ).execute()
+                return True, result
+            except Exception as e:
+                return False, str(e)
+
+
         if not st.session_state.score_saved:
             if save_col.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
                 with st.spinner("Writing to sheet..."):
-                    ok, resp = append_score(st.session_state.username or "Player",
-                                            st.session_state.score,
-                                            elapsed_ms)
+                    ok, resp = write_test_row(
+                        st.session_state.username or "Player",
+                        st.session_state.score,
+                        elapsed_ms
+                    )
+
                 if ok:
                     st.session_state.score_saved = True
                     updated_range = resp.get("updates", {}).get("updatedRange", "")
-                    # Try to show the row number like tester
+                    # Parse row number from e.g. "Scores!A12:D12"
                     try:
-                        cell = updated_range.split("!")[1].split(":")[-1]  # e.g., D12 or A12
+                        cell = updated_range.split("!")[1].split(":")[-1]
                         row_num = int("".join(ch for ch in cell if ch.isdigit()))
                     except Exception:
                         row_num = None
                     st.session_state.saved_row_id = row_num
+
                     st.success("✅ Score submitted to Google Sheets!")
                     st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
                     st.balloons()
                 else:
                     st.error(f"❌ Failed to save score: {resp}")
+
+
+
 
         if st.session_state.score_saved:
             row_txt = f" (row #{st.session_state.saved_row_id})" if st.session_state.saved_row_id else ""
