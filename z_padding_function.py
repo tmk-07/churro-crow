@@ -9,7 +9,7 @@ import random
 import time
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from z_leaderboard import add_score
+from z_leaderboard import add_score, get_leaderboard
 
 # --- LEADERBOARD: DB + API ---
 @st.cache_resource
@@ -351,7 +351,10 @@ def padding_practice():
         elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
 
         if st.button("💾 Submit Score to Leaderboard"):
-            add_score(st.session_state.username or "Player", st.session_state.score, elapsed_ms)
+            add_score(st.session_state.username or "Player",
+                    st.session_state.score,
+                    elapsed_ms)
+            get_leaderboard.clear()   # ← invalidate cached rows immediately
             st.success("Score saved!")
 
         c1, c2, c3 = st.columns(3)
