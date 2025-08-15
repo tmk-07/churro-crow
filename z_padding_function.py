@@ -222,31 +222,31 @@ def padding_practice():
                 return False, str(e)
 
 
-        if not st.session_state.score_saved:
-            if save_col.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
-                with st.spinner("Writing to sheet..."):
-                    ok, resp = write_test_row(
-                        st.session_state.username or "Player",
-                        st.session_state.score,
-                        elapsed_ms
-                    )
+        # if not st.session_state.score_saved:
+        if save_col.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
+            with st.spinner("Writing to sheet..."):
+                ok, resp = write_test_row(
+                    st.session_state.username or "Player",
+                    st.session_state.score,
+                    elapsed_ms
+                )
 
-                if ok:
-                    st.session_state.score_saved = True
-                    updated_range = resp.get("updates", {}).get("updatedRange", "")
-                    # Parse row number from e.g. "Scores!A12:D12"
-                    try:
-                        cell = updated_range.split("!")[1].split(":")[-1]
-                        row_num = int("".join(ch for ch in cell if ch.isdigit()))
-                    except Exception:
-                        row_num = None
-                    st.session_state.saved_row_id = row_num
+            if ok:
+                st.session_state.score_saved = True
+                updated_range = resp.get("updates", {}).get("updatedRange", "")
+                # Parse row number from e.g. "Scores!A12:D12"
+                try:
+                    cell = updated_range.split("!")[1].split(":")[-1]
+                    row_num = int("".join(ch for ch in cell if ch.isdigit()))
+                except Exception:
+                    row_num = None
+                st.session_state.saved_row_id = row_num
 
-                    st.success("✅ Score submitted to Google Sheets!")
-                    st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
-                    st.balloons()
-                else:
-                    st.error(f"❌ Failed to save score: {resp}")
+                st.success("✅ Score submitted to Google Sheets!")
+                st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
+                st.balloons()
+            else:
+                st.error(f"❌ Failed to save score: {resp}")
 
 
 
