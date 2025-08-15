@@ -9,6 +9,7 @@ import random
 import time
 import sqlite3
 from datetime import datetime, timedelta, timezone
+from z_leaderboard import add_score
 
 # --- LEADERBOARD: DB + API ---
 @st.cache_resource
@@ -312,18 +313,18 @@ def padding_practice():
             value=st.session_state.username
         )
 
-        cols = st.columns(3)
-        if cols[0].button("Start Quiz"):
+        c1, c2, c3 = st.columns(3)
+        if c1.button("Start Quiz"):
             if not st.session_state.username.strip():
                 st.warning("Please enter your name to start.")
             else:
                 start_quiz()
 
-        if cols[1].button("🏆 View Leaderboard"):
+        if c2.button("🏆 View Leaderboard"):
             st.session_state.page = "leaderboard"
             st.rerun()
 
-        if cols[2].button("Back to Home"):
+        if c3.button("back to home"):
             st.session_state.page = "start"
             st.rerun()
 
@@ -346,31 +347,27 @@ def padding_practice():
         st.balloons()
         st.subheader(f"⏰ Time's up! Final Score: {st.session_state.score}")
 
-        # Compute elapsed from start_ms
-        if st.session_state.start_ms:
-            elapsed_ms = int(time.time() * 1000) - st.session_state.start_ms
-        else:
-            elapsed_ms = 60_000  # fallback
+        # elapsed time in ms
+        elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
 
-        # Save score button
         if st.button("💾 Submit Score to Leaderboard"):
             add_score(st.session_state.username or "Player", st.session_state.score, elapsed_ms)
-            get_leaderboard.clear()  # refresh cache
             st.success("Score saved!")
 
-        cols = st.columns(3)
-        if cols[0].button("🏆 View Leaderboard"):
+        c1, c2, c3 = st.columns(3)
+        if c1.button("🏆 View Leaderboard"):
             st.session_state.page = "leaderboard"
             st.rerun()
 
-        if cols[1].button("🔁 Play Again"):
+        if c2.button("Play Again"):
             start_quiz()
 
-        if cols[2].button("Back to Home"):
+        if c3.button("Back to Home"):
             st.session_state.page = "start"
             st.rerun()
 
         st.stop()
+
 
         
 

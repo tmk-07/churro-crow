@@ -12,6 +12,7 @@ from z_padding_function import padding_practice
 from z_calc_function import calc_function
 from z_driller import driller
 from z_check_function import check_function
+from z_leaderboard import leaderboard_page
 
 def start_screen():
     # Centered title
@@ -68,3 +69,5 @@ elif st.session_state.page == "padding_practice":
     padding_practice()
 elif st.session_state.page == "driller":
     driller()
+elif st.session_state.page == "leaderboard":
+    leaderboard_page()
