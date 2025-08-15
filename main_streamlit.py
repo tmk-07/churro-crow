@@ -21,36 +21,36 @@ from pathlib import Path
 
 def start_screen():
 
-    st.title("Secrets Debug Nuclear Option")
+    # TOML Validation
+    st.title("TOML Validator")
 
-    # 1. Check physical file existence
     secrets_path = Path(".streamlit/secrets.toml")
     st.write(f"Secrets path: {secrets_path}")
-    st.write(f"File exists: {secrets_path.exists()}")
 
-    # 2. Manual TOML parsing
     if secrets_path.exists():
+        content = secrets_path.read_text()
         try:
-            raw_content = secrets_path.read_text()
-            st.subheader("Raw TOML Content")
-            st.code(raw_content, language="toml")
+            parsed = toml.loads(content)
+            st.success("✅ TOML parsed successfully!")
             
-            parsed = toml.loads(raw_content)
-            st.subheader("Parsed TOML Structure")
+            # Check for required keys
+            required_keys = ["SHEET_ID", "gcp_service_account"]
+            missing = [key for key in required_keys if key not in parsed]
+            
+            if missing:
+                st.error(f"Missing keys: {', '.join(missing)}")
+            else:
+                st.success("✅ All required keys present")
+                
+            st.subheader("Parsed Structure")
             st.json(parsed)
             
-            if "SHEET_ID" in parsed:
-                st.success(f"SHEET_ID found: {parsed['SHEET_ID']}")
-            else:
-                st.error("SHEET_ID missing in parsed TOML!")
         except Exception as e:
-            st.error(f"TOML Parsing failed: {str(e)}")
+            st.error(f"❌ TOML parsing failed: {str(e)}")
+            st.subheader("Raw Content")
+            st.code(content)
     else:
-        st.error("secrets.toml does not exist!")
-
-    # 3. Streamlit's view of secrets
-    st.subheader("Streamlit Secrets")
-    st.write("All keys in st.secrets:", list(st.secrets.keys()))
+        st.error("Secrets file not found!")
 
 
 
