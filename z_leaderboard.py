@@ -18,7 +18,7 @@ def get_leaderboard(limit=20):
     try:
         service = get_sheet_service()
         result = service.spreadsheets().values().get(
-            spreadsheetId=st.secrets["1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"],
+            spreadsheetId=st.secrets["SHEET_ID"],
             range="Scores!A:D"  # Columns: Name, Points, Time(ms), Timestamp
         ).execute()
         values = result.get('values', [])
@@ -34,7 +34,7 @@ def add_score(username: str, points: int, time_ms: int):
         values = [[username, points, time_ms, timestamp]]
         body = {'values': values}
         service.spreadsheets().values().append(
-            spreadsheetId=st.secrets["1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"],
+            spreadsheetId=st.secrets["SHEET_ID"],
             range="Scores",
             valueInputOption="USER_ENTERED",
             body=body
@@ -76,7 +76,7 @@ def leaderboard_page():
 def init_sheet():
     service = get_sheet_service()
     service.spreadsheets().values().update(
-        spreadsheetId=st.secrets["1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"],
+        spreadsheetId=st.secrets["SHEET_ID"],
         range="Scores!A1",
         valueInputOption="RAW",
         body={"values": [["Player", "Points", "Time (ms)", "When (UTC)"]]}
