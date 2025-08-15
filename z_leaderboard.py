@@ -6,12 +6,41 @@ import pandas as pd
 from datetime import datetime, timezone
 import time
 import os
+import streamlit as st
 
-SHEET_ID = (
-    st.secrets.get("SHEET_ID") or 
-    os.environ.get("SHEET_ID") or 
-    "1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"
-)
+
+# Hardcoded fallback
+HARDCODED_SHEET_ID = "1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"
+
+def get_sheet_id():
+    """Robust sheet ID retrieval with multiple fallbacks"""
+    try:
+        # 1. Try direct secret
+        if "SHEET_ID" in st.secrets:
+            return st.secrets.SHEET_ID
+    except:
+        pass
+    
+    try:
+        # 2. Try environment variable
+        if "SHEET_ID" in os.environ:
+            return os.environ["SHEET_ID"]
+    except:
+        pass
+    
+    try:
+        # 3. Try nested in gcp_service_account
+        if ("gcp_service_account" in st.secrets and 
+            "SHEET_ID" in st.secrets.gcp_service_account):
+            return st.secrets.gcp_service_account.SHEET_ID
+    except:
+        pass
+    
+    # 4. Return hardcoded value
+    return HARDCODED_SHEET_ID
+
+# Use this everywhere
+SHEET_ID = get_sheet_id()
 
 # Initialize Google Sheets API
 def get_sheet_service():
