@@ -293,12 +293,13 @@ def padding_practice():
             row_txt = f" (row #{st.session_state.saved_row_id})" if st.session_state.saved_row_id else ""
             st.success(f"Saved for **{st.session_state.username or 'Player'}** — {st.session_state.score} pts in {elapsed_ms/1000:.2f}s{row_txt}")
 
-        if lead_col.button("🏆 View Leaderboard", key="view_leaderboard_btn2"):
-            st.session_state.page = "leaderboard"; st.rerun()
-        if play_col.button("🔁 Play Again", key="play_again_btn"):
-            start_quiz()
-        if home_col.button("⬅ Back to Home", key="home_btn_final"):
-            st.session_state.page = "start"; st.rerun()
+        if st.button("🏆 View Leaderboard"):
+            st.session_state.page = "leaderboard"
+            st.rerun()
+        # if play_col.button("🔁 Play Again", key="play_again_btn"):
+        #     start_quiz()
+        # if home_col.button("⬅ Back to Home", key="home_btn_final"):
+        #     st.session_state.page = "start"; st.rerun()
 
         st.stop()
 
