@@ -5,6 +5,13 @@ from googleapiclient.discovery import build
 import pandas as pd
 from datetime import datetime, timezone
 import time
+import os
+
+SHEET_ID = (
+    st.secrets.get("SHEET_ID") or 
+    os.environ.get("SHEET_ID") or 
+    "1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"
+)
 
 # Initialize Google Sheets API
 def get_sheet_service():
@@ -74,10 +81,25 @@ def leaderboard_page():
 
 # Update the init_sheet function
 def init_sheet():
-    service = get_sheet_service()
-    service.spreadsheets().values().update(
-        spreadsheetId=st.secrets["gcp_service_account"]["SHEET_ID"],
-        range="Scores!A1",
-        valueInputOption="RAW",
-        body={"values": [["Player", "Points", "Time (ms)", "When (UTC)"]]}
-    ).execute()
+    try:
+        service = get_sheet_service()
+        
+        # First clear existing data
+        service.spreadsheets().values().clear(
+            spreadsheetId=SHEET_ID,  # Use the variable here
+            range="Scores!A:Z",
+            body={}
+        ).execute()
+        
+        # Add headers
+        service.spreadsheets().values().update(
+            spreadsheetId=SHEET_ID,  # And here
+            range="Scores!A1",
+            valueInputOption="RAW",
+            body={"values": [["Player", "Points", "Time (ms)", "When (UTC)"]]}
+        ).execute()
+        st.success("Sheet initialized successfully!")
+        time.sleep(3)
+        st.rerun()
+    except Exception as e:
+        st.error(f"Initialization failed: {str(e)}")

@@ -15,21 +15,42 @@ from z_check_function import check_function
 from z_leaderboard import leaderboard_page
 import streamlit as st
 from pathlib import Path
+import toml
+from pathlib import Path
 
 
 def start_screen():
 
-    # Debug secrets loading
-    st.write("## Secrets Debug")
-    st.write("All secrets keys:", list(st.secrets.keys()))
-    st.write("File exists:", os.path.exists(".streamlit/secrets.toml"))
+    st.title("Secrets Debug Nuclear Option")
 
-    if "SHEET_ID" in st.secrets:
-        st.success(f"SHEET_ID found: {st.secrets.SHEET_ID}")
+    # 1. Check physical file existence
+    secrets_path = Path(".streamlit/secrets.toml")
+    st.write(f"Secrets path: {secrets_path}")
+    st.write(f"File exists: {secrets_path.exists()}")
+
+    # 2. Manual TOML parsing
+    if secrets_path.exists():
+        try:
+            raw_content = secrets_path.read_text()
+            st.subheader("Raw TOML Content")
+            st.code(raw_content, language="toml")
+            
+            parsed = toml.loads(raw_content)
+            st.subheader("Parsed TOML Structure")
+            st.json(parsed)
+            
+            if "SHEET_ID" in parsed:
+                st.success(f"SHEET_ID found: {parsed['SHEET_ID']}")
+            else:
+                st.error("SHEET_ID missing in parsed TOML!")
+        except Exception as e:
+            st.error(f"TOML Parsing failed: {str(e)}")
     else:
-        st.error("SHEET_ID missing!")
-        with st.expander("Show full secrets"):
-            st.write(st.secrets)
+        st.error("secrets.toml does not exist!")
+
+    # 3. Streamlit's view of secrets
+    st.subheader("Streamlit Secrets")
+    st.write("All keys in st.secrets:", list(st.secrets.keys()))
 
 
 
