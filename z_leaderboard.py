@@ -72,3 +72,10 @@ def leaderboard_page():
     if c2.button("🔁 Refresh"):
         get_leaderboard.clear()
         st.rerun()
+
+with st.expander("Debug", expanded=False):
+    if st.button("Show last 5"):
+        conn = get_conn()
+        st.write(conn.execute(
+            "SELECT username, points, time_ms, created_at FROM scores ORDER BY id DESC LIMIT 5"
+        ).fetchall())

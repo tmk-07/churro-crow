@@ -233,7 +233,7 @@ def padding_practice():
     elif qopt == "Padding (w/ SymDiff)":
         questions = symquestions
 
-    st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
+    st.write("You have one minute. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
 
     # Start quiz button
@@ -287,6 +287,12 @@ def padding_practice():
                     elapsed_ms)
             lb.get_leaderboard.clear()   # ← invalidate cached rows immediately
             st.success("Score saved!")
+            try:
+                conn = lb.get_conn()
+                count = conn.execute("SELECT COUNT(*) FROM scores").fetchone()[0]
+                st.success(f"Score saved! Total rows now: {count}")
+            except Exception as e:
+                st.exception(e)
 
         c1, c2, c3 = st.columns(3)
         if c1.button("🏆 View Leaderboard"):
