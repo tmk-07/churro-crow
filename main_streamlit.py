@@ -13,8 +13,27 @@ from z_calc_function import calc_function
 from z_driller import driller
 from z_check_function import check_function
 from z_leaderboard import leaderboard_page
+import streamlit as st
+from pathlib import Path
+
 
 def start_screen():
+
+    # Debug secrets loading
+    st.write("## Secrets Debug")
+    st.write("All secrets keys:", list(st.secrets.keys()))
+    st.write("File exists:", os.path.exists(".streamlit/secrets.toml"))
+
+    if "SHEET_ID" in st.secrets:
+        st.success(f"SHEET_ID found: {st.secrets.SHEET_ID}")
+    else:
+        st.error("SHEET_ID missing!")
+        with st.expander("Show full secrets"):
+            st.write(st.secrets)
+
+
+
+
     # Centered title
     st.markdown("<h1 style='text-align: center;'>Onsets Tools</h1>", unsafe_allow_html=True)
 
