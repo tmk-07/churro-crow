@@ -175,6 +175,7 @@ setquestions = [
 
 
 def padding_practice():
+    save_col = lead_col = play_col = home_col = None
     # Initialize session state - ADDED LAST_TIMER_UPDATE
     if 'quiz_active' not in st.session_state:
         st.session_state.quiz_active = False
@@ -288,33 +289,35 @@ def padding_practice():
 
         elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
 
-        # Save button saves only once
+        # 👇 Create columns right here, in this branch
         save_col, lead_col, play_col, home_col = st.columns(4)
 
-    if not st.session_state.score_saved:
-        if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
-            try:
-                row_id = lb.add_score(
-                    st.session_state.username or "Player",
-                    st.session_state.score,
-                    elapsed_ms
-                )
-                st.session_state.score_saved = True
-                st.session_state.saved_row_id = row_id
-                st.session_state.page = "leaderboard"   # go immediately
-                st.rerun()
-            except Exception as e:
-                st.exception(e)
-    else:
-        save_col.button("✅ Score Saved", disabled=True)
-
-
+        # Save button saves only once
+        if not st.session_state.score_saved:
+            if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
+                try:
+                    row_id = lb.add_score(
+                        st.session_state.username or "Player",
+                        st.session_state.score,
+                        elapsed_ms
+                    )
+                    st.session_state.score_saved = True
+                    st.session_state.saved_row_id = row_id
+                    # Optional: jump straight to leaderboard so you see it instantly
+                    st.session_state.page = "leaderboard"
+                    st.rerun()
+                except Exception as e:
+                    st.exception(e)
+        else:
+            save_col.button("✅ Score Saved", disabled=True)
 
         # Persistent success message (survives reruns)
         if st.session_state.score_saved:
-            st.success(f"Saved for **{st.session_state.username or 'Player'}** — "
-                    f"{st.session_state.score} pts in {elapsed_ms/1000:.2f}s "
-                    f"(row #{st.session_state.saved_row_id})")
+            st.success(
+                f"Saved for **{st.session_state.username or 'Player'}** — "
+                f"{st.session_state.score} pts in {elapsed_ms/1000:.2f}s "
+                f"(row #{st.session_state.saved_row_id})"
+            )
 
         if lead_col.button("🏆 View Leaderboard"):
             st.session_state.page = "leaderboard"
@@ -328,6 +331,7 @@ def padding_practice():
             st.rerun()
 
         st.stop()
+
 
 
 
