@@ -11,11 +11,6 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 import z_leaderboard as lb
 
-if 'score_saved' not in st.session_state:
-    st.session_state.score_saved = False
-if 'saved_row_id' not in st.session_state:
-    st.session_state.saved_row_id = None
-
 
 resquestions = [
         ("R ⊆ R", 'z'),
@@ -177,6 +172,10 @@ setquestions = [
 def padding_practice():
     save_col = lead_col = play_col = home_col = None
     # Initialize session state - ADDED LAST_TIMER_UPDATE
+    if 'score_saved' not in st.session_state:
+        st.session_state.score_saved = False
+    if 'saved_row_id' not in st.session_state:
+        st.session_state.saved_row_id = None
     if 'quiz_active' not in st.session_state:
         st.session_state.quiz_active = False
     if 'end_time' not in st.session_state:
