@@ -197,7 +197,7 @@ def padding_practice():
 
     def start_quiz():
         st.session_state.quiz_active = True
-        st.session_state.end_time = datetime.now() + timedelta(seconds=60)
+        st.session_state.end_time = datetime.now() + timedelta(seconds=20)
         st.session_state.start_ms = int(time.time() * 1000)  # ADD
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
@@ -232,8 +232,6 @@ def padding_practice():
         questions = resquestions
     elif qopt == "Padding (w/ SymDiff)":
         questions = symquestions
-    elif qopt == "unicode symbols":
-        questions = uniquestions
 
     st.write("You have two minutes. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
