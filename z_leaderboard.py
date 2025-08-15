@@ -70,7 +70,7 @@ def get_leaderboard(limit=20):
         service = get_sheet_service()
         result = service.spreadsheets().values().get(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:D"
+            range="Scores!A:C"
         ).execute()
         values = result.get('values', [])
         return values[1:] if len(values) > 1 else []
@@ -105,11 +105,10 @@ def leaderboard_page():
     
     scores = get_leaderboard()
     if scores:
-        df = pd.DataFrame(scores, columns=["Player", "Points", "Time (ms)", "When (UTC)"])
-        df["Points"] = df["Points"].astype(int)
-        df["Time (s)"] = (df["Time (ms)"].astype(int) / 1000).round(2)
-        df = df.sort_values(by=["Points", "Time (ms)"], ascending=[False, True])
-        st.dataframe(df[["Player", "Points", "Time (s)", "When (UTC)"]], hide_index=True)
+        df = pd.DataFrame(scores, columns=["Player", "Points", "Date"])
+        df["Points"] = pd.to_numeric(df["Points"], errors="coerce").fillna(0).astype(int)
+        df = df.sort_values(by=["Points", "Date"], ascending=[False, True])
+        st.dataframe(df[["Player", "Points", "Date"]], hide_index=True)
     else:
         st.info("No scores yet - be the first!")
 
@@ -125,14 +124,14 @@ def init_sheet():
         service = get_sheet_service()
         service.spreadsheets().values().clear(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:Z",
+            range="Scores!A:C",
             body={}
         ).execute()
         service.spreadsheets().values().update(
             spreadsheetId=SHEET_ID,
             range="Scores!A1",
             valueInputOption="RAW",
-            body={"values": [["Player", "Points", "Time (ms)", "When (UTC)"]]}
+            body={"values": [["Player", "Points", "Date"]]}
         ).execute()
         st.success("Sheet initialized successfully!")
         time.sleep(2)
