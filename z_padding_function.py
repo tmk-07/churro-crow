@@ -22,13 +22,14 @@ def write_test_row(username: str, points: int):
     try:
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:C",  # now only 3 columns
+            range="Scores!A:C",
             valueInputOption="USER_ENTERED",
             body=body
         ).execute()
         return True, result
     except Exception as e:
         return False, str(e)
+
 
 
 
@@ -219,28 +220,29 @@ def padding_practice():
 
     # Time up: show submit button that WRITES to sheet
     if time_left <= 0:
-        # 2) Inside your `if time_left <= 0:` block, replace the submit section with this:
+        st.session_state.quiz_active = False
+        st.balloons()
+        st.subheader(f"⏰ Time's up! Final Score: {st.session_state.score}")
 
-        # Avoid double-submits and keep layout simple while debugging
+        # Simple submit button (no columns while debugging)
         if (not st.session_state.score_saved) and st.button("💾 Submit Score to Leaderboard"):
             with st.spinner("Writing to sheet..."):
                 ok, resp = write_test_row(
                     st.session_state.username or "Player",
-                    st.session_state.score,
-                    int((int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000)
+                    st.session_state.score
                 )
 
             if ok:
-                # Show full API response for now to confirm
+                st.session_state.score_saved = True
+                # Show full API response (handy while validating)
                 st.success("✅ Score submitted to Google Sheets!")
                 try:
                     updated_range = resp.get("updates", {}).get("updatedRange", "")
                 except AttributeError:
                     updated_range = ""
-                st.write("API response:")
-                st.json(resp)  # <-- make the result visible
+                st.json(resp)
 
-                # Try to extract a row number like 'Scores!A12:D12' -> 12
+                # Extract row number from e.g. 'Scores!A12:C12'
                 try:
                     cell = updated_range.split("!")[1].split(":")[-1]
                     row_num = int("".join(ch for ch in cell if ch.isdigit()))
@@ -250,59 +252,21 @@ def padding_practice():
 
                 st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
                 st.balloons()
-                st.session_state.score_saved = True
             else:
                 st.error("❌ Failed to save score:")
                 st.code(str(resp))  # full traceback/error string
 
-
-
-                # if not st.session_state.score_saved:
-                if save_col.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
-                    with st.spinner("Writing to sheet..."):
-                        ok, resp = write_test_row(
-                            st.session_state.username or "Player",
-                            st.session_state.score,
-                            elapsed_ms
-                        )
-                        st.write("writing")
-
-                    if ok:
-                        st.write("is okay")
-                        st.session_state.score_saved = True
-                        updated_range = resp.get("updates", {}).get("updatedRange", "")
-                        # Parse row number from e.g. "Scores!A12:D12"
-                        try:
-                            cell = updated_range.split("!")[1].split(":")[-1]
-                            row_num = int("".join(ch for ch in cell if ch.isdigit()))
-                            st.write("trying")
-                        except Exception:
-                            st.write("excepting")
-                            row_num = None
-                        st.session_state.saved_row_id = row_num
-
-                        st.success("✅ Score submitted to Google Sheets!")
-                        st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
-                        st.balloons()
-                    else:
-                        st.error(f"❌ Failed to save score: {resp}")
-
-
-
-
         if st.session_state.score_saved:
             row_txt = f" (row #{st.session_state.saved_row_id})" if st.session_state.saved_row_id else ""
-            st.success(f"Saved for **{st.session_state.username or 'Player'}** — {st.session_state.score} pts in {elapsed_ms/1000:.2f}s{row_txt}")
+            # No elapsed_ms now — you removed the time column
+            st.success(f"Saved for **{st.session_state.username or 'Player'}** — {st.session_state.score} pts{row_txt}")
 
         if st.button("🏆 View Leaderboard"):
             st.session_state.page = "leaderboard"
             st.rerun()
-        # if play_col.button("🔁 Play Again", key="play_again_btn"):
-        #     start_quiz()
-        # if home_col.button("⬅ Back to Home", key="home_btn_final"):
-        #     st.session_state.page = "start"; st.rerun()
 
         st.stop()
+
 
     # Question UI
     st.subheader(f"Question: {st.session_state.current_q[0]} ?")
