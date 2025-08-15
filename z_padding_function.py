@@ -11,6 +11,10 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 import z_leaderboard as lb
 
+if 'score_saved' not in st.session_state:
+    st.session_state.score_saved = False
+if 'saved_row_id' not in st.session_state:
+    st.session_state.saved_row_id = None
 
 
 resquestions = [
@@ -197,14 +201,18 @@ def padding_practice():
 
     def start_quiz():
         st.session_state.quiz_active = True
-        st.session_state.end_time = datetime.now() + timedelta(seconds=20)
-        st.session_state.start_ms = int(time.time() * 1000)  # ADD
+        st.session_state.end_time = datetime.now() + timedelta(seconds=60)
+        st.session_state.start_ms = int(time.time() * 1000)
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
         st.session_state.feedback = None
         st.session_state.question_counter = 0
         st.session_state.last_rerun = time.time()
         st.session_state.last_timer_update = time.time()
+        # reset save flags for the new run
+        st.session_state.score_saved = False
+        st.session_state.saved_row_id = None
+
 
 
 
@@ -278,35 +286,45 @@ def padding_practice():
         st.balloons()
         st.subheader(f"⏰ Time's up! Final Score: {st.session_state.score}")
 
-        # elapsed time in ms
         elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
 
-        if st.button("💾 Submit Score to Leaderboard"):
-            lb.add_score(st.session_state.username or "Player",
-                    st.session_state.score,
-                    elapsed_ms)
-            lb.get_leaderboard.clear()   # ← invalidate cached rows immediately
-            st.success("Score saved!")
-            try:
-                conn = lb.get_conn()
-                count = conn.execute("SELECT COUNT(*) FROM scores").fetchone()[0]
-                st.success(f"Score saved! Total rows now: {count}")
-            except Exception as e:
-                st.exception(e)
+        # Save button saves only once
+        save_col, lead_col, play_col, home_col = st.columns(4)
 
-        c1, c2, c3 = st.columns(3)
-        if c1.button("🏆 View Leaderboard"):
+        if not st.session_state.score_saved:
+            if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
+                try:
+                    row_id = lb.add_score(st.session_state.username or "Player",
+                                        st.session_state.score,
+                                        elapsed_ms)
+                    st.session_state.score_saved = True
+                    st.session_state.saved_row_id = row_id
+                    # optional: toast
+                    st.toast("Score saved!", icon="✅")
+                except Exception as e:
+                    st.exception(e)
+        else:
+            save_col.button("✅ Score Saved", disabled=True)
+
+        # Persistent success message (survives reruns)
+        if st.session_state.score_saved:
+            st.success(f"Saved for **{st.session_state.username or 'Player'}** — "
+                    f"{st.session_state.score} pts in {elapsed_ms/1000:.2f}s "
+                    f"(row #{st.session_state.saved_row_id})")
+
+        if lead_col.button("🏆 View Leaderboard"):
             st.session_state.page = "leaderboard"
             st.rerun()
 
-        if c2.button("Play Again"):
+        if play_col.button("🔁 Play Again"):
             start_quiz()
 
-        if c3.button("Back to Home"):
+        if home_col.button("⬅ Back to Home"):
             st.session_state.page = "start"
             st.rerun()
 
         st.stop()
+
 
 
         

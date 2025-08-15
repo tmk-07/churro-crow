@@ -25,15 +25,17 @@ def get_conn():
 
 def add_score(username: str, points: int, time_ms: int):
     conn = get_conn()
-    conn.execute(
+    cur = conn.execute(
         "INSERT INTO scores (username, points, time_ms, created_at) VALUES (?, ?, ?, ?)",
         (username, points, time_ms, datetime.now(timezone.utc).isoformat())
     )
     conn.commit()
     try:
-        get_leaderboard.clear()  # Invalidate cached leaderboard
+        get_leaderboard.clear()  # bust cache after every write
     except Exception:
         pass
+    return cur.lastrowid  # <-- tell caller we saved it
+
 
 @st.cache_data(ttl=10)
 def get_leaderboard(limit=20):
