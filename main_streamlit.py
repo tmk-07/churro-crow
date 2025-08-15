@@ -21,39 +21,6 @@ from pathlib import Path
 
 def start_screen():
 
-    # TOML Validation
-    st.title("TOML Validator")
-
-    secrets_path = Path(".streamlit/secrets.toml")
-    st.write(f"Secrets path: {secrets_path}")
-
-    if secrets_path.exists():
-        content = secrets_path.read_text()
-        try:
-            parsed = toml.loads(content)
-            st.success("✅ TOML parsed successfully!")
-            
-            # Check for required keys
-            required_keys = ["SHEET_ID", "gcp_service_account"]
-            missing = [key for key in required_keys if key not in parsed]
-            
-            if missing:
-                st.error(f"Missing keys: {', '.join(missing)}")
-            else:
-                st.success("✅ All required keys present")
-                
-            st.subheader("Parsed Structure")
-            st.json(parsed)
-            
-        except Exception as e:
-            st.error(f"❌ TOML parsing failed: {str(e)}")
-            st.subheader("Raw Content")
-            st.code(content)
-    else:
-        st.error("Secrets file not found!")
-
-
-
 
     # Centered title
     st.markdown("<h1 style='text-align: center;'>Onsets Tools</h1>", unsafe_allow_html=True)
