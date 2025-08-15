@@ -253,17 +253,17 @@ def padding_practice():
         )
 
         c1, c2, c3 = st.columns(3)
-        if c1.button("Start Quiz"):
+        if c1.button("Start Quiz", use_container_width=True, key="start_quiz_col_btn"):
             if not st.session_state.username.strip():
                 st.warning("Please enter your name to start.")
             else:
                 start_quiz()
 
-        if c2.button("🏆 View Leaderboard"):
+        if c2.button("🏆 View Leaderboard",key="view_leaderboard_btn"):
             st.session_state.page = "leaderboard"
             st.rerun()
 
-        if c3.button("back to home"):
+        if c3.button("back to home",key="home_btn"):
             st.session_state.page = "start"
             st.rerun()
 
@@ -295,7 +295,7 @@ def padding_practice():
         if not st.session_state.score_saved:
 
             # Replace the score submission block with:
-            if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
+            if save_col.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
                 try:
                     success = lb.add_score(
                         st.session_state.username or "Player",
@@ -320,14 +320,14 @@ def padding_practice():
                 f"(row #{st.session_state.saved_row_id})"
             )
 
-        if lead_col.button("🏆 View Leaderboard"):
+        if lead_col.button("🏆 View Leaderboard",key="view_leaderboard_btn"):
             st.session_state.page = "leaderboard"
             st.rerun()
 
-        if play_col.button("🔁 Play Again"):
+        if play_col.button("🔁 Play Again",key="play_again_btn"):
             start_quiz()
 
-        if home_col.button("⬅ Back to Home"):
+        if home_col.button("⬅ Back to Home",key="home_btn_final"):
             st.session_state.page = "start"
             st.rerun()
 
@@ -345,7 +345,7 @@ def padding_practice():
     with st.form("answer_form", clear_on_submit=True):
         # Text input for the answer
         answer = st.text_input("Your answer:", value="")
-        submitted = st.form_submit_button("Submit")
+        submitted = st.form_submit_button("Submit",key="submit_answer_btn")
         
         if submitted:
             check_answer(answer)
@@ -371,7 +371,7 @@ def padding_practice():
 
     st.write("The timer is kinda buggy")
 
-    if st.button("back to home"):
+    if st.button("back to home",key="back_to_home_btn"):
         st.session_state.page = "start"
         st.rerun()
 

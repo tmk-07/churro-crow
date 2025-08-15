@@ -45,14 +45,10 @@ def add_score(username: str, points: int, time_ms: int):
         return False
 
 def leaderboard_page():
-    if st.button("Initialize Sheet (First Time Only)"):
+    if st.button("Initialize Sheet (First Time Only)",key="init_sheet_btn"):
         init_sheet()
     st.title("🏆 Leaderboard")
-    
-    # Create header if sheet is empty
-    if st.button("Initialize Sheet (First Time Only)"):
-        init_sheet()
-    
+
     # Display leaderboard
     scores = get_leaderboard()
     if scores:
@@ -70,10 +66,10 @@ def leaderboard_page():
 
     # Navigation buttons
     c1, c2 = st.columns(2)
-    if c1.button("⬅ Back to Home"):
+    if c1.button("⬅ Back to Home",key="leaderboard_home_btn"):
         st.session_state.page = "start"
         st.rerun()
-    if c2.button("🔁 Refresh Leaderboard"):
+    if c2.button("🔁 Refresh Leaderboard","refresh_leaderboard_btn"):
         st.rerun()
 
 # Update the init_sheet function
