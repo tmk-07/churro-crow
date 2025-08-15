@@ -47,7 +47,7 @@ def add_score(username: str, points: int, time_ms: int):
 def leaderboard_page():
     if st.button("Initialize Sheet (First Time Only)",key="init_sheet_btn"):
         init_sheet()
-    st.title("🏆 Leaderboard")
+    st.title("🏆 Leaderboard 0")
 
     # Display leaderboard
     scores = get_leaderboard()
