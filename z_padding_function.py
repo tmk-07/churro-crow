@@ -14,23 +14,22 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 # 1) Put this NEAR THE TOP (next to your Sheets setup), not inside any if-block
-def write_test_row(username: str, points: int, time_ms: int):
-    """Append (username, points, time_ms, timestamp UTC) to Scores!A:D."""
+def write_test_row(username: str, points: int):
+    """Append (username, points, date) to Scores!A:C."""
     service = get_sheets_service()
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    body = {"values": [[username, int(points), int(time_ms), timestamp]]}
+    date_str = datetime.now(timezone.utc).strftime("%m/%d/%y")  # e.g. 08/19/25
+    body = {"values": [[username, int(points), date_str]]}
     try:
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:D",              # SAME as tester.py
+            range="Scores!A:C",  # now only 3 columns
             valueInputOption="USER_ENTERED",
             body=body
         ).execute()
         return True, result
     except Exception as e:
-        # Surface exact error content
-        import traceback
-        return False, f"{e}\n{traceback.format_exc()}"
+        return False, str(e)
+
 
 
 SHEET_ID = "1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"
@@ -84,21 +83,22 @@ def get_sheets_service():
     )
     return build("sheets", "v4", credentials=creds)
 
-def append_score(username: str, points: int, time_ms: int):
-    """Append one row to Scores!A:D — SAME as tester.py pattern."""
+def append_score(username: str, points: int):
+    """Append one row to Scores!A:C — no time_ms."""
     service = get_sheets_service()
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    body = {"values": [[username, int(points), int(time_ms), timestamp]]}
+    date_str = datetime.now(timezone.utc).strftime("%m/%d/%y")
+    body = {"values": [[username, int(points), date_str]]}
     try:
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:D",
+            range="Scores!A:C",
             valueInputOption="USER_ENTERED",
             body=body
         ).execute()
         return True, result
     except Exception as e:
         return False, str(e)
+
 
 # ===== Question banks =====
 resquestions = [
