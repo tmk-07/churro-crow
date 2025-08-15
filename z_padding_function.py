@@ -7,10 +7,9 @@ from io import BytesIO
 import uuid
 import random
 import time
-import sqlite3
 from datetime import datetime, timedelta, timezone
 
-# ===== Google Sheets (no secrets) =====
+# ===== Google Sheets (no secrets; same pattern as tester.py) =====
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -65,12 +64,12 @@ def get_sheets_service():
     )
     return build("sheets", "v4", credentials=creds)
 
-def add_score_to_sheet(username: str, points: int, time_ms: int):
-    """Append a row to Scores!A:D. Returns (ok, result_or_error)."""
+def append_score(username: str, points: int, time_ms: int):
+    """Append one row to Scores!A:D — SAME as tester.py pattern."""
+    service = get_sheets_service()
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    body = {"values": [[username, int(points), int(time_ms), timestamp]]}
     try:
-        service = get_sheets_service()
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        body = {"values": [[username, int(points), int(time_ms), timestamp]]}
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
             range="Scores!A:D",
@@ -81,23 +80,7 @@ def add_score_to_sheet(username: str, points: int, time_ms: int):
     except Exception as e:
         return False, str(e)
 
-def extract_row_number(updated_range: str) -> int | None:
-    """
-    updated_range looks like 'Scores!A12:D12' or 'Scores!A2'
-    Return the ending row number if we can parse it.
-    """
-    try:
-        part = updated_range.split("!")[1]  # A12:D12
-        if ":" in part:
-            end = part.split(":")[1]        # D12
-        else:
-            end = part                      # A12
-        row_str = "".join(ch for ch in end if ch.isdigit())
-        return int(row_str) if row_str else None
-    except Exception:
-        return None
-
-# ======= Questions =======
+# ===== Question banks =====
 resquestions = [
     ("R ⊆ R", 'z'), ("B ⊆ B", 'z'), ("G ⊆ G", 'z'), ("Y ⊆ Y", 'z'),
     ("R ⊆ V", 'z'), ("R ⊆ Z", 'r'), ("B ⊆ V", 'z'), ("B ⊆ Z", 'b'),
@@ -137,31 +120,15 @@ setquestions = [
 ]
 
 def padding_practice():
-    # Initialize session state
-    if 'score_saved' not in st.session_state:
-        st.session_state.score_saved = False
-    if 'saved_row_id' not in st.session_state:
-        st.session_state.saved_row_id = None
-    if 'quiz_active' not in st.session_state:
-        st.session_state.quiz_active = False
-    if 'end_time' not in st.session_state:
-        st.session_state.end_time = None
-    if 'score' not in st.session_state:
-        st.session_state.score = 0
-    if 'current_q' not in st.session_state:
-        st.session_state.current_q = None
-    if 'feedback' not in st.session_state:
-        st.session_state.feedback = None
-    if 'last_rerun' not in st.session_state:
-        st.session_state.last_rerun = time.time()
-    if 'question_counter' not in st.session_state:
-        st.session_state.question_counter = 0
-    if 'last_timer_update' not in st.session_state:
-        st.session_state.last_timer_update = time.time()
-    if 'username' not in st.session_state:
-        st.session_state.username = ""
-    if 'start_ms' not in st.session_state:
-        st.session_state.start_ms = 0
+    # Session state
+    for k, v in {
+        "score_saved": False, "saved_row_id": None, "quiz_active": False,
+        "end_time": None, "score": 0, "current_q": None, "feedback": None,
+        "last_rerun": time.time(), "question_counter": 0,
+        "last_timer_update": time.time(), "username": "", "start_ms": 0
+    }.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
 
     def start_quiz():
         st.session_state.quiz_active = True
@@ -203,10 +170,7 @@ def padding_practice():
 
     # Start screen
     if not st.session_state.quiz_active:
-        st.session_state.username = st.text_input(
-            "Enter your name (for the leaderboard):",
-            value=st.session_state.username
-        )
+        st.session_state.username = st.text_input("Enter your name (for the leaderboard):", value=st.session_state.username)
 
         c1, c2, c3 = st.columns(3)
         if c1.button("Start Quiz", use_container_width=True, key="start_quiz_col_btn"):
@@ -216,12 +180,10 @@ def padding_practice():
                 start_quiz()
 
         if c2.button("🏆 View Leaderboard", key="view_leaderboard_btn"):
-            st.session_state.page = "leaderboard"
-            st.rerun()
+            st.session_state.page = "leaderboard"; st.rerun()
 
         if c3.button("back to home", key="home_btn"):
-            st.session_state.page = "start"
-            st.rerun()
+            st.session_state.page = "start"; st.rerun()
 
         st.stop()
 
@@ -234,73 +196,63 @@ def padding_practice():
         timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
         timer_placeholder.subheader(timer_text)
 
-    # When time is up
+    # Time up: show submit button that WRITES to sheet
     if time_left <= 0:
         st.session_state.quiz_active = False
         st.balloons()
         st.subheader(f"⏰ Time's up! Final Score: {st.session_state.score}")
 
         elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
-
         save_col, lead_col, play_col, home_col = st.columns(4)
 
         if not st.session_state.score_saved:
             if save_col.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
-                ok, res = add_score_to_sheet(
-                    st.session_state.username or "Player",
-                    st.session_state.score,
-                    elapsed_ms
-                )
+                with st.spinner("Writing to sheet..."):
+                    ok, resp = append_score(st.session_state.username or "Player",
+                                            st.session_state.score,
+                                            elapsed_ms)
                 if ok:
                     st.session_state.score_saved = True
-                    updated_range = res.get("updates", {}).get("updatedRange", "")
-                    st.session_state.saved_row_id = extract_row_number(updated_range)
-                    st.success("Score submitted to leaderboard!")
+                    updated_range = resp.get("updates", {}).get("updatedRange", "")
+                    # Try to show the row number like tester
+                    try:
+                        cell = updated_range.split("!")[1].split(":")[-1]  # e.g., D12 or A12
+                        row_num = int("".join(ch for ch in cell if ch.isdigit()))
+                    except Exception:
+                        row_num = None
+                    st.session_state.saved_row_id = row_num
+                    st.success("✅ Score submitted to Google Sheets!")
+                    st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
                     st.balloons()
                 else:
-                    st.error(f"Failed to save score: {res}")
+                    st.error(f"❌ Failed to save score: {resp}")
 
         if st.session_state.score_saved:
             row_txt = f" (row #{st.session_state.saved_row_id})" if st.session_state.saved_row_id else ""
-            st.success(
-                f"Saved for **{st.session_state.username or 'Player'}** — "
-                f"{st.session_state.score} pts in {elapsed_ms/1000:.2f}s{row_txt}"
-            )
+            st.success(f"Saved for **{st.session_state.username or 'Player'}** — {st.session_state.score} pts in {elapsed_ms/1000:.2f}s{row_txt}")
 
         if lead_col.button("🏆 View Leaderboard", key="view_leaderboard_btn2"):
-            st.session_state.page = "leaderboard"
-            st.rerun()
-
+            st.session_state.page = "leaderboard"; st.rerun()
         if play_col.button("🔁 Play Again", key="play_again_btn"):
             start_quiz()
-
         if home_col.button("⬅ Back to Home", key="home_btn_final"):
-            st.session_state.page = "start"
-            st.rerun()
+            st.session_state.page = "start"; st.rerun()
 
         st.stop()
 
-    # Show current question
+    # Question UI
     st.subheader(f"Question: {st.session_state.current_q[0]} ?")
-
-    # Answer form
     with st.form("answer_form", clear_on_submit=True):
         answer = st.text_input("Your answer:", value="")
-        submitted = st.form_submit_button("Submit")
-        if submitted:
+        if st.form_submit_button("Submit"):
             check_answer(answer)
 
     # Feedback
     if st.session_state.feedback:
-        message, kind = st.session_state.feedback
-        if kind == "success":
-            st.success(message)
-        elif kind == "error":
-            st.error(message)
-        else:
-            st.warning(message)
+        msg, kind = st.session_state.feedback
+        (st.success if kind=="success" else st.error if kind=="error" else st.warning)(msg)
 
-    # Timer tick
+    # Tick timer while active
     if st.session_state.quiz_active:
         current_time = time.time()
         if current_time - st.session_state.last_timer_update > 0.5:
@@ -310,5 +262,4 @@ def padding_practice():
     st.write("The timer is kinda buggy")
 
     if st.button("back to home", key="back_to_home_btn"):
-        st.session_state.page = "start"
-        st.rerun()
+        st.session_state.page = "start"; st.rerun()
