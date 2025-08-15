@@ -291,23 +291,23 @@ def padding_practice():
         # Save button saves only once
         save_col, lead_col, play_col, home_col = st.columns(4)
 
-        if not st.session_state.score_saved:
-            if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
-                try:
-                    row_id = lb.add_score(
-                        st.session_state.username or "Player",
-                        st.session_state.score,
-                        elapsed_ms
-                    )
-                    st.session_state.score_saved = True
-                    st.session_state.saved_row_id = row_id
-                    # ✅ go straight to leaderboard so you see the row immediately
-                    st.session_state.page = "leaderboard"
-                    st.rerun()
-                except Exception as e:
-                    st.exception(e)
-        else:
-            save_col.button("✅ Score Saved", disabled=True)
+    if not st.session_state.score_saved:
+        if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
+            try:
+                row_id = lb.add_score(
+                    st.session_state.username or "Player",
+                    st.session_state.score,
+                    elapsed_ms
+                )
+                st.session_state.score_saved = True
+                st.session_state.saved_row_id = row_id
+                st.session_state.page = "leaderboard"   # go immediately
+                st.rerun()
+            except Exception as e:
+                st.exception(e)
+    else:
+        save_col.button("✅ Score Saved", disabled=True)
+
 
 
         # Persistent success message (survives reruns)

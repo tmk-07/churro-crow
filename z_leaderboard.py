@@ -1,22 +1,23 @@
 # z_leaderboard.py
-import sqlite3
-import time
+import sqlite3, os
 from datetime import datetime, timezone
 import streamlit as st
 
+DB_PATH = os.path.join(os.path.dirname(__file__), "leaderboard.db")
 
-
-# ---- DB helpers ----
 @st.cache_resource
 def get_conn():
-    conn = sqlite3.connect("leaderboard.db", check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    # Better concurrency defaults
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("""
         CREATE TABLE IF NOT EXISTS scores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             points INTEGER NOT NULL,
-            time_ms INTEGER NOT NULL,         -- lower = faster
-            created_at TEXT NOT NULL          -- ISO timestamp (UTC)
+            time_ms INTEGER NOT NULL,
+            created_at TEXT NOT NULL
         )
     """)
     conn.commit()
@@ -29,14 +30,15 @@ def add_score(username: str, points: int, time_ms: int):
         (username, points, time_ms, datetime.now(timezone.utc).isoformat())
     )
     conn.commit()
+    # Bust any cached leaderboard data
     try:
-        get_leaderboard.clear()  # bust cache after every write
+        get_leaderboard.clear()
     except Exception:
         pass
-    return cur.lastrowid  # <-- tell caller we saved it
+    return cur.lastrowid
 
-
-@st.cache_data(ttl=10)
+# ⛔ Remove caching here to eliminate stale reads during debugging.
+#    You can add @st.cache_data back later if you want.
 def get_leaderboard(limit=20):
     conn = get_conn()
     return conn.execute("""
@@ -46,11 +48,11 @@ def get_leaderboard(limit=20):
         LIMIT ?
     """, (limit,)).fetchall()
 
-# ---- Page UI ----
 def leaderboard_page():
     st.title("🏆 Leaderboard")
-    rows = get_leaderboard(20)
+    st.caption(f"DB path: {DB_PATH}")
 
+    rows = get_leaderboard(20)
     if rows:
         st.dataframe(
             {
@@ -66,11 +68,13 @@ def leaderboard_page():
     else:
         st.info("No scores yet — be the first!")
 
-    c1, c2 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
     if c1.button("⬅ Back to Home"):
         st.session_state.page = "start"
         st.rerun()
     if c2.button("🔁 Refresh"):
-        get_leaderboard.clear()
         st.rerun()
-
+    if c3.button("➕ Insert test row"):
+        add_score("TestUser", 1, 1234)
+        st.success("Inserted TestUser(1)")
+        st.rerun()
