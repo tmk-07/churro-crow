@@ -290,26 +290,36 @@ def padding_practice():
         elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
 
         # 👇 Create columns right here, in this branch
+        # inside if time_left <= 0: (after you compute elapsed_ms)
         save_col, lead_col, play_col, home_col = st.columns(4)
 
-        # Save button saves only once
         if not st.session_state.score_saved:
             if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
                 try:
-                    row_id = lb.add_score(
+                    row_id, tail = lb.add_score_and_verify(
                         st.session_state.username or "Player",
                         st.session_state.score,
                         elapsed_ms
                     )
                     st.session_state.score_saved = True
                     st.session_state.saved_row_id = row_id
-                    # Optional: jump straight to leaderboard so you see it instantly
+
+                    # Show immediate proof that the row exists
+                    st.success(
+                        f"Saved row #{row_id} for **{st.session_state.username or 'Player'}** — "
+                        f"{st.session_state.score} pts in {elapsed_ms/1000:.2f}s"
+                    )
+                    with st.expander("Last 5 rows (direct from DB)", expanded=True):
+                        st.write(tail)
+
+                    # Now go to leaderboard
                     st.session_state.page = "leaderboard"
                     st.rerun()
                 except Exception as e:
                     st.exception(e)
         else:
             save_col.button("✅ Score Saved", disabled=True)
+
 
         # Persistent success message (survives reruns)
         if st.session_state.score_saved:

@@ -78,3 +78,22 @@ def leaderboard_page():
         add_score("TestUser", 1, 1234)
         st.success("Inserted TestUser(1)")
         st.rerun()
+
+    # z_leaderboard.py
+def add_score_and_verify(username: str, points: int, time_ms: int):
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO scores (username, points, time_ms, created_at) VALUES (?, ?, ?, ?)",
+        (username, points, time_ms, datetime.now(timezone.utc).isoformat())
+    )
+    conn.commit()
+    new_id = cur.lastrowid
+    # Verify immediately from the same connection
+    tail = conn.execute(
+        "SELECT id, username, points, time_ms, created_at FROM scores ORDER BY id DESC LIMIT 5"
+    ).fetchall()
+    try:
+        get_leaderboard.clear()
+    except Exception:
+        pass
+    return new_id, tail
