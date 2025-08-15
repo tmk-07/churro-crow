@@ -293,31 +293,23 @@ def padding_practice():
         save_col, lead_col, play_col, home_col = st.columns(4)
 
         if not st.session_state.score_saved:
+
+            # Replace the score submission block with:
             if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
                 try:
-                    row_id, tail = lb.add_score_and_verify(
+                    success = lb.add_score(
                         st.session_state.username or "Player",
                         st.session_state.score,
                         elapsed_ms
                     )
-                    st.session_state.score_saved = True
-                    st.session_state.saved_row_id = row_id
-
-                    # Show immediate proof that the row exists
-                    st.success(
-                        f"Saved row #{row_id} for **{st.session_state.username or 'Player'}** — "
-                        f"{st.session_state.score} pts in {elapsed_ms/1000:.2f}s"
-                    )
-                    with st.expander("Last 5 rows (direct from DB)", expanded=True):
-                        st.write(tail)
-
-                    # Now go to leaderboard
-                    st.session_state.page = "leaderboard"
-                    st.rerun()
+                    if success:
+                        st.session_state.score_saved = True
+                        st.success("Score submitted to leaderboard!")
+                        st.balloons()
+                    else:
+                        st.error("Failed to save score")
                 except Exception as e:
-                    st.exception(e)
-        else:
-            save_col.button("✅ Score Saved", disabled=True)
+                    st.error(f"Error: {str(e)}")
 
 
         # Persistent success message (survives reruns)

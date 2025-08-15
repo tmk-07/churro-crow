@@ -1,99 +1,88 @@
 # z_leaderboard.py
-import sqlite3, os
-from datetime import datetime, timezone
 import streamlit as st
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+import pandas as pd
+from datetime import datetime, timezone
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "leaderboard.db")
+# Initialize Google Sheets API
+def get_sheet_service():
+    creds = service_account.Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    return build('sheets', 'v4', credentials=creds)
 
-@st.cache_resource
-def get_conn():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    # Better concurrency defaults
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=NORMAL;")
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS scores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            points INTEGER NOT NULL,
-            time_ms INTEGER NOT NULL,
-            created_at TEXT NOT NULL
-        )
-    """)
-    conn.commit()
-    return conn
+def get_leaderboard(limit=20):
+    try:
+        service = get_sheet_service()
+        result = service.spreadsheets().values().get(
+            spreadsheetId=st.secrets["SHEET_ID"],
+            range="Scores!A:D"  # Columns: Name, Points, Time(ms), Timestamp
+        ).execute()
+        values = result.get('values', [])
+        return values[1:] if len(values) > 1 else []  # Skip header row
+    except Exception as e:
+        st.error(f"Error loading leaderboard: {str(e)}")
+        return []
 
 def add_score(username: str, points: int, time_ms: int):
-    conn = get_conn()
-    cur = conn.execute(
-        "INSERT INTO scores (username, points, time_ms, created_at) VALUES (?, ?, ?, ?)",
-        (username, points, time_ms, datetime.now(timezone.utc).isoformat())
-    )
-    conn.commit()
-    # Bust any cached leaderboard data
     try:
-        get_leaderboard.clear()
-    except Exception:
-        pass
-    return cur.lastrowid
-
-# ⛔ Remove caching here to eliminate stale reads during debugging.
-#    You can add @st.cache_data back later if you want.
-def get_leaderboard(limit=20):
-    conn = get_conn()
-    return conn.execute("""
-        SELECT username, points, time_ms, created_at
-        FROM scores
-        ORDER BY points DESC, time_ms ASC, created_at ASC
-        LIMIT ?
-    """, (limit,)).fetchall()
+        service = get_sheet_service()
+        timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        values = [[username, points, time_ms, timestamp]]
+        body = {'values': values}
+        service.spreadsheets().values().append(
+            spreadsheetId=st.secrets["SHEET_ID"],
+            range="Scores",
+            valueInputOption="USER_ENTERED",
+            body=body
+        ).execute()
+        return True
+    except Exception as e:
+        st.error(f"Failed to save score: {str(e)}")
+        return False
 
 def leaderboard_page():
     st.title("🏆 Leaderboard")
-    st.caption(f"DB path: {DB_PATH}")
-
-    rows = get_leaderboard(20)
-    if rows:
-        st.dataframe(
-            {
-                "#": list(range(1, len(rows)+1)),
-                "Player": [r[0] for r in rows],
-                "Points": [r[1] for r in rows],
-                "Time (s)": [round(r[2] / 1000, 2) for r in rows],
-                "When (UTC)": [r[3] for r in rows],
-            },
-            use_container_width=True,
-            hide_index=True,
-        )
+    
+    # Create header if sheet is empty
+    if st.button("Initialize Sheet (First Time Only)"):
+        init_sheet()
+    
+    # Display leaderboard
+    scores = get_leaderboard()
+    if scores:
+        # Convert to DataFrame
+        df = pd.DataFrame(scores, columns=["Player", "Points", "Time (ms)", "When (UTC)"])
+        df["Points"] = df["Points"].astype(int)
+        df["Time (s)"] = (df["Time (ms)"].astype(int) / 1000).round(2)
+        
+        # Sort: Higher points first, then faster times
+        df = df.sort_values(by=["Points", "Time (ms)"], ascending=[False, True])
+        
+        st.dataframe(df[["Player", "Points", "Time (s)", "When (UTC)"]], hide_index=True)
     else:
-        st.info("No scores yet — be the first!")
+        st.info("No scores yet - be the first!")
 
-    c1, c2, c3 = st.columns(3)
+    # Navigation buttons
+    c1, c2 = st.columns(2)
     if c1.button("⬅ Back to Home"):
         st.session_state.page = "start"
         st.rerun()
-    if c2.button("🔁 Refresh"):
-        st.rerun()
-    if c3.button("➕ Insert test row"):
-        add_score("TestUser", 1, 1234)
-        st.success("Inserted TestUser(1)")
+    if c2.button("🔁 Refresh Leaderboard"):
         st.rerun()
 
-    # z_leaderboard.py
-def add_score_and_verify(username: str, points: int, time_ms: int):
-    conn = get_conn()
-    cur = conn.execute(
-        "INSERT INTO scores (username, points, time_ms, created_at) VALUES (?, ?, ?, ?)",
-        (username, points, time_ms, datetime.now(timezone.utc).isoformat())
-    )
-    conn.commit()
-    new_id = cur.lastrowid
-    # Verify immediately from the same connection
-    tail = conn.execute(
-        "SELECT id, username, points, time_ms, created_at FROM scores ORDER BY id DESC LIMIT 5"
-    ).fetchall()
+# First-time setup function
+def init_sheet():
     try:
-        get_leaderboard.clear()
-    except Exception:
-        pass
-    return new_id, tail
+        service = get_sheet_service()
+        service.spreadsheets().values().update(
+            spreadsheetId=st.secrets["SHEET_ID"],
+            range="Scores!A1",
+            valueInputOption="RAW",
+            body={"values": [["Player", "Points", "Time (ms)", "When (UTC)"]]}
+        ).execute()
+        st.success("Sheet initialized with headers!")
+    except Exception as e:
+        st.error(f"Initialization failed: {str(e)}")
