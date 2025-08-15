@@ -13,6 +13,26 @@ from datetime import datetime, timedelta, timezone
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
+# 1) Put this NEAR THE TOP (next to your Sheets setup), not inside any if-block
+def write_test_row(username: str, points: int, time_ms: int):
+    """Append (username, points, time_ms, timestamp UTC) to Scores!A:D."""
+    service = get_sheets_service()
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    body = {"values": [[username, int(points), int(time_ms), timestamp]]}
+    try:
+        result = service.spreadsheets().values().append(
+            spreadsheetId=SHEET_ID,
+            range="Scores!A:D",              # SAME as tester.py
+            valueInputOption="USER_ENTERED",
+            body=body
+        ).execute()
+        return True, result
+    except Exception as e:
+        # Surface exact error content
+        import traceback
+        return False, f"{e}\n{traceback.format_exc()}"
+
+
 SHEET_ID = "1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"
 
 SERVICE_ACCOUNT_INFO = {
@@ -198,59 +218,73 @@ def padding_practice():
 
     # Time up: show submit button that WRITES to sheet
     if time_left <= 0:
-        st.session_state.quiz_active = False
-        st.balloons()
-        st.subheader(f"⏰ Time's up! Final Score: {st.session_state.score}")
+        # 2) Inside your `if time_left <= 0:` block, replace the submit section with this:
 
-        elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
-        save_col, lead_col, play_col, home_col = st.columns(4)
-
-        def write_test_row(username: str, points: int, time_ms: int):
-            """Append (username, points, time_ms, timestamp UTC) to Scores!A:D."""
-            service = get_sheets_service()
-            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-            body = {"values": [[username, int(points), int(time_ms), timestamp]]}
-            try:
-                result = service.spreadsheets().values().append(
-                    spreadsheetId=SHEET_ID,
-                    range="Scores!A:D",          # tab must be named "Scores"
-                    valueInputOption="USER_ENTERED",
-                    body=body
-                ).execute()
-                return True, result
-            except Exception as e:
-                return False, str(e)
-
-
-        # if not st.session_state.score_saved:
-        if save_col.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
+        # Avoid double-submits and keep layout simple while debugging
+        if (not st.session_state.score_saved) and st.button("💾 Submit Score to Leaderboard"):
             with st.spinner("Writing to sheet..."):
                 ok, resp = write_test_row(
                     st.session_state.username or "Player",
                     st.session_state.score,
-                    elapsed_ms
+                    int((int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000)
                 )
-                st.write("writing")
 
             if ok:
-                st.write("is okay")
-                st.session_state.score_saved = True
-                updated_range = resp.get("updates", {}).get("updatedRange", "")
-                # Parse row number from e.g. "Scores!A12:D12"
+                # Show full API response for now to confirm
+                st.success("✅ Score submitted to Google Sheets!")
+                try:
+                    updated_range = resp.get("updates", {}).get("updatedRange", "")
+                except AttributeError:
+                    updated_range = ""
+                st.write("API response:")
+                st.json(resp)  # <-- make the result visible
+
+                # Try to extract a row number like 'Scores!A12:D12' -> 12
                 try:
                     cell = updated_range.split("!")[1].split(":")[-1]
                     row_num = int("".join(ch for ch in cell if ch.isdigit()))
-                    st.write("trying")
                 except Exception:
-                    st.write("excepting")
                     row_num = None
                 st.session_state.saved_row_id = row_num
 
-                st.success("✅ Score submitted to Google Sheets!")
                 st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
                 st.balloons()
+                st.session_state.score_saved = True
             else:
-                st.error(f"❌ Failed to save score: {resp}")
+                st.error("❌ Failed to save score:")
+                st.code(str(resp))  # full traceback/error string
+
+
+
+                # if not st.session_state.score_saved:
+                if save_col.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
+                    with st.spinner("Writing to sheet..."):
+                        ok, resp = write_test_row(
+                            st.session_state.username or "Player",
+                            st.session_state.score,
+                            elapsed_ms
+                        )
+                        st.write("writing")
+
+                    if ok:
+                        st.write("is okay")
+                        st.session_state.score_saved = True
+                        updated_range = resp.get("updates", {}).get("updatedRange", "")
+                        # Parse row number from e.g. "Scores!A12:D12"
+                        try:
+                            cell = updated_range.split("!")[1].split(":")[-1]
+                            row_num = int("".join(ch for ch in cell if ch.isdigit()))
+                            st.write("trying")
+                        except Exception:
+                            st.write("excepting")
+                            row_num = None
+                        st.session_state.saved_row_id = row_num
+
+                        st.success("✅ Score submitted to Google Sheets!")
+                        st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
+                        st.balloons()
+                    else:
+                        st.error(f"❌ Failed to save score: {resp}")
 
 
 
