@@ -3,6 +3,9 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 import streamlit as st
+import os
+st.caption(f"DB path: {os.path.abspath('leaderboard.db')}")
+
 
 # ---- DB helpers ----
 @st.cache_resource
@@ -27,6 +30,10 @@ def add_score(username: str, points: int, time_ms: int):
         (username, points, time_ms, datetime.now(timezone.utc).isoformat())
     )
     conn.commit()
+    try:
+        get_leaderboard.clear()  # Invalidate cached leaderboard
+    except Exception:
+        pass
 
 @st.cache_data(ttl=10)
 def get_leaderboard(limit=20):

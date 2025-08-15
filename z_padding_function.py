@@ -9,74 +9,7 @@ import random
 import time
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from z_leaderboard import add_score, get_leaderboard
-
-# --- LEADERBOARD: DB + API ---
-@st.cache_resource
-def get_conn():
-    conn = sqlite3.connect("leaderboard.db", check_same_thread=False)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS scores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            points INTEGER NOT NULL,
-            time_ms INTEGER NOT NULL,         -- lower is better (faster)
-            created_at TEXT NOT NULL          -- ISO timestamp (UTC)
-        )
-    """)
-    conn.commit()
-    return conn
-
-def add_score(username: str, points: int, time_ms: int):
-    conn = get_conn()
-    conn.execute(
-        "INSERT INTO scores (username, points, time_ms, created_at) VALUES (?, ?, ?, ?)",
-        (username, points, time_ms, datetime.now(timezone.utc).isoformat())
-    )
-    conn.commit()
-
-@st.cache_data(ttl=10)
-def get_leaderboard(limit=20):
-    # Sort by highest points, then fastest time, then earliest entry
-    conn = get_conn()
-    return conn.execute("""
-        SELECT username, points, time_ms, created_at
-        FROM scores
-        ORDER BY points DESC, time_ms ASC, created_at ASC
-        LIMIT ?
-    """, (limit,)).fetchall()
-
-
-# --- LEADERBOARD PAGE ---
-def leaderboard_page():
-    st.title("🏆 Leaderboard")
-
-    rows = get_leaderboard(20)
-    if rows:
-        # nice compact table
-        st.dataframe(
-            {
-                "#": list(range(1, len(rows)+1)),
-                "Player": [r[0] for r in rows],
-                "Points": [r[1] for r in rows],
-                "Time (s)": [round(r[2] / 1000, 2) for r in rows],
-                "When (UTC)": [r[3] for r in rows],
-            },
-            use_container_width=True,
-            hide_index=True,
-        )
-    else:
-        st.info("No scores yet — be the first!")
-
-    cols = st.columns(3)
-    if cols[0].button("⬅ Back to Home"):
-        st.session_state.page = "start"
-        st.rerun()
-    if cols[1].button("🔁 Refresh"):
-        get_leaderboard.clear()  # clear cache
-        st.rerun()
-
-
+import z_leaderboard as lb
 
 
 
@@ -351,10 +284,10 @@ def padding_practice():
         elapsed_ms = (int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000
 
         if st.button("💾 Submit Score to Leaderboard"):
-            add_score(st.session_state.username or "Player",
+            lb.add_score(st.session_state.username or "Player",
                     st.session_state.score,
                     elapsed_ms)
-            get_leaderboard.clear()   # ← invalidate cached rows immediately
+            lb.get_leaderboard.clear()   # ← invalidate cached rows immediately
             st.success("Score saved!")
 
         c1, c2, c3 = st.columns(3)
@@ -408,7 +341,6 @@ def padding_practice():
         st.session_state.page = "start"
         st.rerun()
 
-    elif st.session_state.page == "leaderboard":
-        leaderboard_page()
+
 
     
