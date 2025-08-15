@@ -294,17 +294,21 @@ def padding_practice():
         if not st.session_state.score_saved:
             if save_col.button("💾 Submit Score to Leaderboard", key="save_btn"):
                 try:
-                    row_id = lb.add_score(st.session_state.username or "Player",
-                                        st.session_state.score,
-                                        elapsed_ms)
+                    row_id = lb.add_score(
+                        st.session_state.username or "Player",
+                        st.session_state.score,
+                        elapsed_ms
+                    )
                     st.session_state.score_saved = True
                     st.session_state.saved_row_id = row_id
-                    # optional: toast
-                    st.toast("Score saved!", icon="✅")
+                    # ✅ go straight to leaderboard so you see the row immediately
+                    st.session_state.page = "leaderboard"
+                    st.rerun()
                 except Exception as e:
                     st.exception(e)
         else:
             save_col.button("✅ Score Saved", disabled=True)
+
 
         # Persistent success message (survives reruns)
         if st.session_state.score_saved:
@@ -352,10 +356,13 @@ def padding_practice():
             st.warning(message)
 
     # ADDED PROPER TIMER UPDATE LOGIC
-    current_time = time.time()
-    if current_time - st.session_state.last_timer_update > 0.5:
-        st.session_state.last_timer_update = current_time
-        st.rerun()
+    # Only tick while the quiz is active (prevents wiping success messages)
+    if st.session_state.quiz_active:
+        current_time = time.time()
+        if current_time - st.session_state.last_timer_update > 0.5:
+            st.session_state.last_timer_update = current_time
+            st.rerun()
+
 
     st.write("The timer is kinda buggy")
 
