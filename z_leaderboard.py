@@ -4,6 +4,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import pandas as pd
 from datetime import datetime, timezone
+import time
 
 # Initialize Google Sheets API
 def get_sheet_service():
@@ -44,6 +45,8 @@ def add_score(username: str, points: int, time_ms: int):
         return False
 
 def leaderboard_page():
+    if st.button("Initialize Sheet (First Time Only)"):
+        init_sheet()
     st.title("🏆 Leaderboard")
     
     # Create header if sheet is empty
@@ -73,16 +76,12 @@ def leaderboard_page():
     if c2.button("🔁 Refresh Leaderboard"):
         st.rerun()
 
-# First-time setup function
+# Update the init_sheet function
 def init_sheet():
-    try:
-        service = get_sheet_service()
-        service.spreadsheets().values().update(
-            spreadsheetId=st.secrets["SHEET_ID"],
-            range="Scores!A1",
-            valueInputOption="RAW",
-            body={"values": [["Player", "Points", "Time (ms)", "When (UTC)"]]}
-        ).execute()
-        st.success("Sheet initialized with headers!")
-    except Exception as e:
-        st.error(f"Initialization failed: {str(e)}")
+    service = get_sheet_service()
+    service.spreadsheets().values().update(
+        spreadsheetId=st.secrets["SHEET_ID"],
+        range="Scores!A1",
+        valueInputOption="RAW",
+        body={"values": [["Player", "Points", "Time (ms)", "When (UTC)"]]}
+    ).execute()
