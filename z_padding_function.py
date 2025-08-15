@@ -230,15 +230,19 @@ def padding_practice():
                     st.session_state.score,
                     elapsed_ms
                 )
+                st.write("writing")
 
             if ok:
+                st.write("is okay")
                 st.session_state.score_saved = True
                 updated_range = resp.get("updates", {}).get("updatedRange", "")
                 # Parse row number from e.g. "Scores!A12:D12"
                 try:
                     cell = updated_range.split("!")[1].split(":")[-1]
                     row_num = int("".join(ch for ch in cell if ch.isdigit()))
+                    st.write("trying")
                 except Exception:
+                    st.write("excepting")
                     row_num = None
                 st.session_state.saved_row_id = row_num
 
