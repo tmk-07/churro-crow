@@ -54,8 +54,8 @@ def get_leaderboard(limit=20):
     try:
         service = get_sheet_service()
         result = service.spreadsheets().values().get(
-            spreadsheetId=st.secrets["gcp_service_account"]["SHEET_ID"],
-            range="Scores!A:D"  # Columns: Name, Points, Time(ms), Timestamp
+            spreadsheetId=SHEET_ID,  # Use constant here
+            range="Scores!A:D"
         ).execute()
         values = result.get('values', [])
         return values[1:] if len(values) > 1 else []  # Skip header row
