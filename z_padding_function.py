@@ -12,7 +12,6 @@ import streamlit as st
 from datetime import datetime, timezone
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-import threading
 
 SHEET_ID = "1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"
 SERVICE_ACCOUNT_INFO = {
@@ -39,7 +38,6 @@ def get_sheets_service():
     return build("sheets", "v4", credentials=creds)
 
 # ---- Single writer (3 columns: Player, Points, Date)
-# MODIFIED write_test_row function to include mode
 def write_test_row(username: str, points: int, mode: str):
     """Append score to specific mode's sheet"""
     try:
@@ -65,9 +63,8 @@ def write_test_row(username: str, points: int, mode: str):
     except Exception as e:
         import traceback
         error_msg = f"{e}\n{traceback.format_exc()}"
-        st.error(f"Write error: {error_msg}")
         return False, error_msg
-    # Map mode to sheet name
+
 resquestions = [
     ("R ⊆ R", 'z'), ("B ⊆ B", 'z'), ("G ⊆ G", 'z'), ("Y ⊆ Y", 'z'),
     ("R ⊆ V", 'z'), ("R ⊆ Z", 'r'), ("B ⊆ V", 'z'), ("B ⊆ Z", 'b'),
@@ -106,30 +103,104 @@ setquestions = [
     ("V - Z", 'v'), ("Z - V", 'z'), ("V ∩ Z", 'z'), ("Z ∪ V", 'v'),
 ]
 
-
 def padding_practice():
-    # ... existing code ...
+    # Session state initialization
+    for k, v in {
+        "score_saved": False, "saved_row_id": None, "quiz_active": False,
+        "end_time": None, "score": 0, "current_q": None, "feedback": None,
+        "last_rerun": time.time(), "question_counter": 0,
+        "last_timer_update": time.time(), "username": "", "start_ms": 0,
+        "quiz_mode": "Padding Practice",  # Default mode
+        "timer_placeholder": None  # Placeholder for timer display
+    }.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
+    # Mode selection
+    if not st.session_state.quiz_active:
+        st.session_state.quiz_mode = st.selectbox(
+            "Choose a mode", 
+            ("Padding Practice", "Restriction Practice", "Padding (w/ SymDiff)"),
+            key="mode_select"
+        )
+    
+    # Set questions based on selected mode
+    if st.session_state.quiz_mode == "Padding Practice":
+        questions = setquestions
+    elif st.session_state.quiz_mode == "Restriction Practice":
+        questions = resquestions
+    else:
+        questions = symquestions
+
+    def start_quiz():
+        st.session_state.quiz_active = True
+        st.session_state.end_time = datetime.now() + timedelta(seconds=60)
+        st.session_state.start_ms = int(time.time() * 1000)
+        st.session_state.score = 0
+        st.session_state.current_q = random.choice(questions)
+        st.session_state.feedback = None
+        st.session_state.question_counter = 0
+        st.session_state.score_saved = False
+        st.session_state.last_timer_update = time.time()
+        
+        # Create a placeholder for the timer
+        st.session_state.timer_placeholder = st.empty()
+
+    def check_answer(user_answer):
+        if not user_answer.strip():
+            st.session_state.feedback = ("Please enter an answer", "warning")
+            return
+        user_answer_lower = user_answer.strip().lower()
+        if user_answer_lower == st.session_state.current_q[1]:
+            st.session_state.score += 1
+            st.session_state.feedback = ("Correct!", "success")
+            st.session_state.current_q = random.choice(questions)
+            st.session_state.question_counter += 1
+        else:
+            st.session_state.feedback = ("Wrong.", "error")
+
+    # UI
+    st.title("OS Quick Padding Practice")
+    st.write("You have one minute. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
     # Start screen - show when quiz is not active
     if not st.session_state.quiz_active:
-        st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username, autocomplete="off")
+        st.session_state.username = st.text_input(
+            "Enter name (opt):", 
+            value=st.session_state.username,
+            autocomplete="off",
+            key="name_input"
+        )
  
         c1, c2, c3 = st.columns(3)
-        if c1.button("Start Quiz", use_container_width=True, key="start_quiz_col_btn"):
+        if c1.button("Start Quiz", use_container_width=True, key="start_quiz_btn"):
             start_quiz()
             st.rerun()
 
-        if c2.button("🏆 View Leaderboard", key="view_leaderboard_btn"):
+        if c2.button("🏆 View Leaderboard", key="view_leaderboard_btn_main"):
             st.session_state.page = "leaderboard"
             st.rerun()
 
-        if c3.button("back to home", key="home_btn_main"):
+        if c3.button("Back to Home", key="home_btn_main"):
             st.session_state.page = "start"
             st.rerun()
 
     # Quiz screen - show when quiz is active
     else:
-        # ... existing timer and question code ...
+        # Calculate time remaining
+        now = datetime.now()
+        if st.session_state.end_time:
+            time_left = max((st.session_state.end_time - now).total_seconds(), 0)
+        else:
+            time_left = 0
+
+        # Update timer display using placeholder
+        if st.session_state.timer_placeholder:
+            if time_left > 0:
+                timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
+                st.session_state.timer_placeholder.subheader(timer_text)
+            else:
+                st.session_state.timer_placeholder.empty()
 
         # Time up: show results and submit button
         if time_left <= 0:
@@ -164,13 +235,35 @@ def padding_practice():
         else:
             st.subheader(f"Question: {st.session_state.current_q[0]} ?")
             with st.form("answer_form", clear_on_submit=True):
-                answer = st.text_input("Your answer:", value="", autocomplete="off", key="answer_input")
+                answer = st.text_input(
+                    "Your answer:", 
+                    value="",
+                    autocomplete="off",
+                    key="answer_input"
+                )
                 if st.form_submit_button("Submit", key="submit_answer_btn"):
                     check_answer(answer)
 
-            # ... existing feedback code ...
+            # Feedback
+            if st.session_state.feedback:
+                msg, kind = st.session_state.feedback
+                if kind == "success":
+                    st.success(msg)
+                elif kind == "error":
+                    st.error(msg)
+                else:
+                    st.warning(msg)
 
-    # Back to home button (show in both states)
-    if st.button("back to home", key="back_to_home_btn_unique"):
+            # Force timer update by rerunning periodically
+            current_time = time.time()
+            if current_time - st.session_state.last_timer_update > 0.5:
+                st.session_state.last_timer_update = current_time
+                st.rerun()
+
+    # Bottom back to home button (show in both states)
+    if st.button("Back to Home", key="bottom_home_btn"):
+        # Clean up timer placeholder
+        if st.session_state.timer_placeholder:
+            st.session_state.timer_placeholder.empty()
         st.session_state.page = "start"
         st.rerun()
