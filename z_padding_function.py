@@ -260,68 +260,6 @@ def padding_practice():
         st.session_state.page = "start"
         st.rerun()
 
-    # Session state initialization
-    for k, v in {
-        "score_saved": False, "saved_row_id": None, "quiz_active": False,
-        "end_ts": None, "score": 0, "current_q": None, "feedback": None,
-        "last_tick": 0.0, "question_counter": 0,
-        "username": "", "start_ms": 0, "quiz_mode": "Padding Practice",
-        "show_results": False,
-    }.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
-
-
-    # Mode selection
-    if not st.session_state.quiz_active:
-        st.session_state.quiz_mode = st.selectbox(
-            "Choose a mode", 
-            ("Padding Practice", "Restriction Practice", "Padding (w/ SymDiff)"),
-            key="mode_select"
-        )
-    
-    # Set questions based on selected mode
-    if st.session_state.quiz_mode == "Padding Practice":
-        questions = setquestions
-    elif st.session_state.quiz_mode == "Restriction Practice":
-        questions = resquestions
-    else:
-        questions = symquestions
-
-    def start_quiz():
-        st.session_state.quiz_active = True
-        st.session_state.show_results = False
-        st.session_state.end_ts = time.time() + 60  # 60s timer
-        st.session_state.start_ms = int(time.time() * 1000)
-        st.session_state.run_id = uuid.uuid4().hex   # <— NEW
-        st.session_state.q_seq = 0                   # <— NEW
-        st.session_state.score = 0
-        st.session_state.current_q = random.choice(questions)
-        st.session_state.feedback = None
-        st.session_state.question_counter = 0
-        st.session_state.score_saved = False
-
-
-
-    def check_answer(user_answer):
-        if not user_answer.strip():
-            st.session_state.feedback = ("Please enter an answer", "warning")
-            return
-        user_answer_lower = user_answer.strip().lower()
-        if user_answer_lower == st.session_state.current_q[1]:
-            st.session_state.score += 1
-            st.session_state.feedback = ("Correct!", "success")
-            st.session_state.current_q = random.choice(questions)
-            st.session_state.question_counter += 1
-            st.session_state.q_seq += 1  # <— NEW
-        else:
-            st.session_state.feedback = ("Wrong.", "error")
-
-
-    # UI
-    st.title("OS Quick Padding Practice")
-    st.write("You have one minute. For restrictions mode, answer with the eliminated set name. 'z' represents null")
-
     # Start screen - show when quiz is not active
     if not st.session_state.quiz_active:
         st.session_state.username = st.text_input(
