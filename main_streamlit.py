@@ -17,6 +17,7 @@ import streamlit as st
 from pathlib import Path
 import toml
 from pathlib import Path
+from ztesttimer import ztesttimer
 
 def start_screen():
 
@@ -83,3 +84,5 @@ elif st.session_state.page == "driller":
     driller()
 elif st.session_state.page == "leaderboard":
     leaderboard_page()
+elif st.session_state.page == "ztesttimer":
+    ztesttimer()
