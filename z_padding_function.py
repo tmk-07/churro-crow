@@ -138,7 +138,7 @@ def padding_practice():
 
     def start_quiz():
         st.session_state.quiz_active = True
-        st.session_state.end_time = datetime.now() + timedelta(seconds=10)
+        st.session_state.end_time = datetime.now() + timedelta(seconds=60)
         st.session_state.start_ms = int(time.time() * 1000)
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
@@ -177,8 +177,7 @@ def padding_practice():
     # Start screen
     if not st.session_state.quiz_active:
         st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username)
-        st.stop()
-
+ 
         c1, c2, c3 = st.columns(3)
         # Make sure username exists in session state
         if "username" not in st.session_state:
