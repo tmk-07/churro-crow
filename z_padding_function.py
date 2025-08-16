@@ -12,6 +12,7 @@ import streamlit as st
 from datetime import datetime, timezone
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+import threading
 
 SHEET_ID = "1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"
 SERVICE_ACCOUNT_INFO = {
@@ -126,6 +127,16 @@ def padding_practice():
             ("Padding Practice", "Restriction Practice", "Padding (w/ SymDiff)")
         )
     
+    if "timer_thread" not in st.session_state:
+        st.session_state.timer_thread = None
+        st.session_state.stop_timer = False
+
+    def timer_update():
+        while not st.session_state.stop_timer and st.session_state.quiz_active:
+            st.rerun()
+            time.sleep(0.5)
+
+
     # Set questions based on selected mode
     if st.session_state.quiz_mode == "Padding Practice":
         questions = setquestions
@@ -144,9 +155,15 @@ def padding_practice():
         st.session_state.feedback = None
         st.session_state.question_counter = 0
         st.session_state.last_rerun = time.time()
-        st.session_state.last_timer_update = time.time()
+        st.session_state.last_timer_update = time.time() ## maybe remove
         st.session_state.score_saved = False
         st.session_state.saved_row_id = None
+        st.session_state.stop_timer = False
+
+        if st.session_state.timer_thread is None or not st.session_state.timer_thread.is_alive():
+            st.session_state.timer_thread = threading.Thread(target=timer_update, daemon=True)
+            st.session_state.timer_thread.start()
+
 
     def check_answer(user_answer):
         if not user_answer.strip():
@@ -199,7 +216,7 @@ def padding_practice():
         # Time up: show results and submit button
         if time_left <= 0:
             st.subheader(f"Your score: {st.session_state.score} points")
-            
+            st.session_state.stop_timer = True  # Stop the timer thread
             # Submit to leaderboard
             if not st.session_state.score_saved:
                 if st.button("💾 Submit Score to Leaderboard"):
@@ -250,6 +267,11 @@ def padding_practice():
                 st.session_state.last_timer_update = current_time
                 st.rerun()
 
+        if st.button("back to home", key="back_to_home_btn"):
+            st.session_state.stop_timer = True
+            st.session_state.page = "start"
+            st.rerun()
+    
     # Back to home button (show in both states)
     if st.button("back to home", key="back_to_home_btn"):
         st.session_state.page = "start"
