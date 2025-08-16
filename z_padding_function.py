@@ -119,6 +119,12 @@ setquestions = [
 ]
 
 def padding_practice():
+    now = datetime.now()
+    if st.session_state.get("quiz_active") and st.session_state.get("end_time"):
+        # if the previous run is already over, go back to start screen
+        if now >= st.session_state.end_time:
+            st.session_state.quiz_active = False
+            st.session_state.end_time = None
     elapsed_ms = 0
     # Session state
     for k, v in {
@@ -171,6 +177,7 @@ def padding_practice():
     # Start screen
     if not st.session_state.quiz_active:
         st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username)
+        st.stop()
 
         c1, c2, c3 = st.columns(3)
         # Make sure username exists in session state
