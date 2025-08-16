@@ -290,13 +290,16 @@ def padding_practice():
     def start_quiz():
         st.session_state.quiz_active = True
         st.session_state.show_results = False
-        st.session_state.end_ts = time.time() + 60  # 60 seconds
+        st.session_state.end_ts = time.time() + 60  # 60s timer
         st.session_state.start_ms = int(time.time() * 1000)
+        st.session_state.run_id = uuid.uuid4().hex   # <— NEW
+        st.session_state.q_seq = 0                   # <— NEW
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
         st.session_state.feedback = None
         st.session_state.question_counter = 0
         st.session_state.score_saved = False
+
 
 
     def check_answer(user_answer):
@@ -309,8 +312,10 @@ def padding_practice():
             st.session_state.feedback = ("Correct!", "success")
             st.session_state.current_q = random.choice(questions)
             st.session_state.question_counter += 1
+            st.session_state.q_seq += 1  # <— NEW
         else:
             st.session_state.feedback = ("Wrong.", "error")
+
 
     # UI
     st.title("OS Quick Padding Practice")
@@ -388,19 +393,22 @@ def padding_practice():
             st.subheader(f"Question: {st.session_state.current_q[0]} ?")
             
             # Create form with unique key based on start time
-            form_key = f"answer_form_{st.session_state.start_ms}"
+            # Unique form key per render & question
+            run_id = st.session_state.get("run_id", "norun")
+            q_seq  = st.session_state.get("q_seq", 0)
+            form_key = f"answer_form_{run_id}_{q_seq}"
+
             with st.form(form_key, clear_on_submit=True):
                 answer = st.text_input(
-                    "Your answer:", 
+                    "Your answer:",
                     value="",
                     autocomplete="off",
-                    key=f"answer_input_{st.session_state.start_ms}"
+                    key=f"answer_input_{run_id}_{q_seq}"
                 )
-                # Form submit button without key argument
                 submitted = st.form_submit_button("Submit")
-                
                 if submitted:
                     check_answer(answer)
+
 
             # Feedback
             if st.session_state.feedback:
