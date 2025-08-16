@@ -340,20 +340,20 @@ def padding_practice():
 
     # Quiz screen - show when quiz is active
     else:
-        # Calculate time remaining
-        now = datetime.now()
-        if st.session_state.end_time:
-            time_left = max((st.session_state.end_time - now).total_seconds(), 0)
-        else:
-            time_left = 0
+        # Calculate time remaining (UNIX seconds)
+        end_ts = st.session_state.get("end_ts")
+        time_left = max(int((end_ts or 0) - time.time()), 0)
 
-        # Update timer display using placeholder
-        if st.session_state.timer_placeholder:
-            if time_left > 0:
-                timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
-                st.session_state.timer_placeholder.subheader(timer_text)
-            else:
-                st.session_state.timer_placeholder.empty()
+        # Fresh timer placeholder each render
+        timer_ph = st.empty()
+        timer_ph.subheader(f"⏱️ Time left: {time_left//60:02d}:{time_left%60:02d}")
+
+        # Time up? go to results
+        if time_left == 0:
+            st.session_state.quiz_active = False
+            st.session_state.show_results = True
+            st.rerun()
+
 
         # Time up: show results and submit button
         if time_left <= 0:
