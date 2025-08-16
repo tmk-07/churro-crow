@@ -204,7 +204,7 @@ def padding_practice():
         # Simple submit button (no columns while debugging)
         if (not st.session_state.score_saved) and st.button("💾 Submit Score to Leaderboard"):
             with st.spinner("Writing to sheet..."):
-                ok, resp = append_score(
+                ok, resp = write_score_row(
                     st.session_state.username or "Player",
                     st.session_state.score
                 )
@@ -232,6 +232,35 @@ def padding_practice():
             else:
                 st.error("❌ Failed to save score:")
                 st.code(str(resp))  # full traceback/error string
+
+                if st.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
+                    with st.spinner("Writing to sheet..."):
+                        ok, resp = write_score_row(
+                            st.session_state.username or "Player",
+                            st.session_state.score,
+                            elapsed_ms
+                        )
+                        st.write("writing")
+
+                    if ok:
+                        st.write("is okay")
+                        st.session_state.score_saved = True
+                        updated_range = resp.get("updates", {}).get("updatedRange", "")
+                        # Parse row number from e.g. "Scores!A12:D12"
+                        try:
+                            cell = updated_range.split("!")[1].split(":")[-1]
+                            row_num = int("".join(ch for ch in cell if ch.isdigit()))
+                            st.write("trying")
+                        except Exception:
+                            st.write("excepting")
+                            row_num = None
+                        st.session_state.saved_row_id = row_num
+
+                        st.success("✅ Score submitted to Google Sheets!")
+                        st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
+                        st.balloons()
+                    else:
+                        st.error(f"❌ Failed to save score: {resp}")
 
         if st.session_state.score_saved:
             row_txt = f" (row #{st.session_state.saved_row_id})" if st.session_state.saved_row_id else ""
