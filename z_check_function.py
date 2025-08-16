@@ -271,4 +271,3 @@ def check_function():
         st.session_state.page = "start"
         st.rerun()
 
-    st.markdown("variations under construction: un, vz interchangeable")
