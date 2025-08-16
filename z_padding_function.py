@@ -222,7 +222,7 @@ def padding_practice():
     # Fresh placeholder each render
     timer_ph = st.empty()
     timer_ph.subheader(f"⏱️ Time left: {time_left//60:02d}:{time_left%60:02d}")
-    # st.video(os.path.join("assets", "timers", "60s.mp4"), format="video/mp4", start_time=0,muted=True)
+    # st.video(os.path.join("assets", "timers", "60s.mp4"), format="video/mp4", start_time=0, muted=True)
 
     # If time is up, flip flags and rerun to show results
     if time_left == 0:
@@ -257,118 +257,5 @@ def padding_practice():
 
     # Bottom back to home
     if st.button("Back to Home", key="bottom_home_btn"):
-        st.session_state.page = "start"
-        st.rerun()
-
-    # Start screen - show when quiz is not active
-    if not st.session_state.quiz_active:
-        st.session_state.username = st.text_input(
-            "Enter name (opt):", 
-            value=st.session_state.username,
-            autocomplete="off",
-            key="name_input"
-        )
- 
-        c1, c2, c3 = st.columns(3)
-        if c1.button("Start Quiz", use_container_width=True, key="start_quiz_btn"):
-            start_quiz()
-            st.rerun()
-
-        if c2.button("🏆 View Leaderboard", key="view_leaderboard_btn_main"):
-            st.session_state.page = "leaderboard"
-            st.rerun()
-
-        if c3.button("Back to Home", key="home_btn_main"):
-            st.session_state.page = "start"
-            st.rerun()
-
-    # Quiz screen - show when quiz is active
-    else:
-        # Calculate time remaining (UNIX seconds)
-        end_ts = st.session_state.get("end_ts")
-        time_left = max(int((end_ts or 0) - time.time()), 0)
-
-        # Fresh timer placeholder each render
-        timer_ph = st.empty()
-        timer_ph.subheader(f"⏱️ Time left: {time_left//60:02d}:{time_left%60:02d}")
-
-        # Time up? go to results
-        if time_left == 0:
-            st.session_state.quiz_active = False
-            st.session_state.show_results = True
-            st.rerun()
-
-
-        # Time up: show results and submit button
-        if time_left <= 0:
-            st.subheader(f"Your score: {st.session_state.score} points")
-            
-            # Submit to leaderboard
-            if not st.session_state.score_saved:
-                if st.button("💾 Submit Score to Leaderboard", key="submit_score_btn"):
-                    with st.spinner("Writing to sheet..."):
-                        ok, resp = write_test_row(
-                            st.session_state.username or "Player",
-                            st.session_state.score,
-                            st.session_state.quiz_mode
-                        )
-                    if ok:
-                        st.session_state.score_saved = True
-                        st.success("✅ Score submitted to leaderboard!")
-                    else:
-                        st.error("❌ Failed to save score:")
-                        st.code(str(resp))
-
-            # Play again or view leaderboard
-            col1, col2 = st.columns(2)
-            if col1.button("Play Again", key="play_again_btn"):
-                start_quiz()
-                st.rerun()
-            if col2.button("🏆 View Leaderboard", key="view_leaderboard_quiz_btn"):
-                st.session_state.page = "leaderboard"
-                st.rerun()
-        # Quiz still active - show question UI
-        else:
-            st.subheader(f"Question: {st.session_state.current_q[0]} ?")
-            
-            # Create form with unique key based on start time
-            # Unique form key per render & question
-            run_id = st.session_state.get("run_id", "norun")
-            q_seq  = st.session_state.get("q_seq", 0)
-            form_key = f"answer_form_{run_id}_{q_seq}"
-
-            with st.form(form_key, clear_on_submit=True):
-                answer = st.text_input(
-                    "Your answer:",
-                    value="",
-                    autocomplete="off",
-                    key=f"answer_input_{run_id}_{q_seq}"
-                )
-                submitted = st.form_submit_button("Submit")
-                if submitted:
-                    check_answer(answer)
-
-
-            # Feedback
-            if st.session_state.feedback:
-                msg, kind = st.session_state.feedback
-                if kind == "success":
-                    st.success(msg)
-                elif kind == "error":
-                    st.error(msg)
-                else:
-                    st.warning(msg)
-
-            # Force timer update by rerunning periodically
-            current_time = time.time()
-            if current_time - st.session_state.last_timer_update > 0.5:
-                st.session_state.last_timer_update = current_time
-                st.rerun()
-    # Bottom back to home button (show in both states)
-    
-    if st.button("Back to Home", key="bottom_home_btn"):
-        # Clean up timer placeholder
-        if st.session_state.timer_placeholder:
-            st.session_state.timer_placeholder.empty()
         st.session_state.page = "start"
         st.rerun()
