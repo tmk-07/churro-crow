@@ -84,7 +84,3 @@ elif st.session_state.page == "driller":
     driller()
 elif st.session_state.page == "leaderboard":
     leaderboard_page()
-elif st.session_state.page == "ztesttimer":
-    if "run_id" not in st.session_state:
-        st.session_state.run_id = str(uuid.uuid4())
-    render_countdown_video(st.session_state.run_id)
