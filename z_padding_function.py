@@ -221,7 +221,8 @@ def padding_practice():
 
     # Fresh placeholder each render
     timer_ph = st.empty()
-    timer_ph.subheader(f"⏱️ Time left: {time_left//60:02d}:{time_left%60:02d}")
+    # timer_ph.subheader(f"⏱️ Time left: {time_left//60:02d}:{time_left%60:02d}")
+    st.video(os.path.join("assets", "timers", "60s.mp4"), format="video/mp4", start_time=0,muted=True)
 
     # If time is up, flip flags and rerun to show results
     if time_left == 0:
