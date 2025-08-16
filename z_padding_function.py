@@ -162,14 +162,14 @@ def padding_practice():
             st.session_state.feedback = ("Wrong.", "error")
 
     # UI
-    st.title("OS Quick Padding Practice - leaderboard work in progress")
+    st.title("OS Quick Padding Practice")
     # REMOVED DUPLICATE MODE SELECTBOX HERE
 
     st.write("You have one minute. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
     # Start screen - show when quiz is not active
     if not st.session_state.quiz_active:
-        st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username)
+        st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username,autocomplete="off")
  
         c1, c2, c3 = st.columns(3)
         if c1.button("Start Quiz", use_container_width=True, key="start_quiz_col_btn"):
@@ -230,7 +230,7 @@ def padding_practice():
         else:
             st.subheader(f"Question: {st.session_state.current_q[0]} ?")
             with st.form("answer_form", clear_on_submit=True):
-                answer = st.text_input("Your answer:", value="")
+                answer = st.text_input("Your answer:", value="",autocomplete="off")
                 if st.form_submit_button("Submit"):
                     check_answer(answer)
 
