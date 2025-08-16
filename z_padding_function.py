@@ -8,14 +8,11 @@ import uuid
 import random
 import time
 from datetime import datetime, timedelta, timezone
-
-# ===== Google Sheets (no secrets; same pattern as tester.py) =====
 import streamlit as st
 from datetime import datetime, timezone
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-# ---- Constants
 SHEET_ID = "1IHC4Ju76c-ftIYiLEZlrb_n1tEVzbzXrSJYVlb6Qht4"
 SERVICE_ACCOUNT_INFO = {
     "type": "service_account",
@@ -41,49 +38,35 @@ def get_sheets_service():
     return build("sheets", "v4", credentials=creds)
 
 # ---- Single writer (3 columns: Player, Points, Date)
-# 1) Put this NEAR THE TOP (next to your Sheets setup), not inside any if-block
-def write_test_row(username: str, points: int):
-    """Append (username, points, date) to Scores!A:C"""
-    service = get_sheets_service()
-    # SIMPLIFIED: Use date-only format
-    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    
-    # CHANGED: Only 3 values now
-    body = {"values": [[username, int(points), date_str]]}
-    
+# MODIFIED write_test_row function to include mode
+def write_test_row(username: str, points: int, mode: str):
+    """Append score to specific mode's sheet"""
     try:
-        # CHANGED: Range updated to A:C (3 columns)
+        service = get_sheets_service()
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        
+        # Map mode to sheet name
+        sheet_name = {
+            "Restriction Practice": "Restriction",
+            "Padding Practice": "SetOperations",
+            "Padding (w/ SymDiff)": "SymDiff"
+        }.get(mode, "SetOperations")  # default to SetOperations
+        
+        body = {"values": [[username, int(points), date_str]]}
+        
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:C",
+            range=f"{sheet_name}!A:C",
             valueInputOption="USER_ENTERED",
             body=body
         ).execute()
         return True, result
     except Exception as e:
         import traceback
-        return False, f"{e}\n{traceback.format_exc()}"
-
-
-
-def append_score(username: str, points: int):
-    """Append one row to Scores!A:C — no time_ms."""
-    service = get_sheets_service()
-    date_str = datetime.now(timezone.utc).strftime("%m/%d/%y")
-    body = {"values": [[username, int(points), date_str]]}
-    try:
-        result = service.spreadsheets().values().append(
-            spreadsheetId=SHEET_ID,
-            range="Scores!A:C",
-            valueInputOption="USER_ENTERED",
-            body=body
-        ).execute()
-        return True, result
-    except Exception as e:
-        return False, str(e)
-
-
-# ===== Question banks =====
+        error_msg = f"{e}\n{traceback.format_exc()}"
+        st.error(f"Write error: {error_msg}")
+        return False, error_msg
+    # Map mode to sheet name
 resquestions = [
     ("R ⊆ R", 'z'), ("B ⊆ B", 'z'), ("G ⊆ G", 'z'), ("Y ⊆ Y", 'z'),
     ("R ⊆ V", 'z'), ("R ⊆ Z", 'r'), ("B ⊆ V", 'z'), ("B ⊆ Z", 'b'),
@@ -122,6 +105,7 @@ setquestions = [
     ("V - Z", 'v'), ("Z - V", 'z'), ("V ∩ Z", 'z'), ("Z ∪ V", 'v'),
 ]
 
+
 def padding_practice():
     now = datetime.now()
     # Session state initialization
@@ -129,15 +113,31 @@ def padding_practice():
         "score_saved": False, "saved_row_id": None, "quiz_active": False,
         "end_time": None, "score": 0, "current_q": None, "feedback": None,
         "last_rerun": time.time(), "question_counter": 0,
-        "last_timer_update": time.time(), "username": "", "start_ms": 0
+        "last_timer_update": time.time(), "username": "", "start_ms": 0,
+        "quiz_mode": "Padding Practice"  # ADDED DEFAULT MODE
     }.items():
         if k not in st.session_state:
             st.session_state[k] = v
 
+    # Moved mode selection outside of if-block
+    if not st.session_state.quiz_active:
+        st.session_state.quiz_mode = st.selectbox(
+            "Choose a mode", 
+            ("Padding Practice", "Restriction Practice", "Padding (w/ SymDiff)")
+        )
+    
+    # Set questions based on selected mode
+    if st.session_state.quiz_mode == "Padding Practice":
+        questions = setquestions
+    elif st.session_state.quiz_mode == "Restriction Practice":
+        questions = resquestions
+    else:
+        questions = symquestions
+
     def start_quiz():
         st.session_state.quiz_active = True
         st.session_state.show_results = False
-        st.session_state.end_time = datetime.now() + timedelta(seconds=10)
+        st.session_state.end_time = datetime.now() + timedelta(seconds=60)  # FIXED: 60 seconds = 1 minute
         st.session_state.start_ms = int(time.time() * 1000)
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
@@ -163,13 +163,7 @@ def padding_practice():
 
     # UI
     st.title("OS Quick Padding Practice - leaderboard work in progress")
-    qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice","Padding (w/ SymDiff)"))
-    if qopt == "Padding Practice":
-        questions = setquestions
-    elif qopt == "Restriction Practice":
-        questions = resquestions
-    else:
-        questions = symquestions
+    # REMOVED DUPLICATE MODE SELECTBOX HERE
 
     st.write("You have one minute. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
@@ -210,10 +204,11 @@ def padding_practice():
             if not st.session_state.score_saved:
                 if st.button("💾 Submit Score to Leaderboard"):
                     with st.spinner("Writing to sheet..."):
-                        # REMOVED time_ms parameter
+                        # FIXED: Added mode parameter
                         ok, resp = write_test_row(
                             st.session_state.username or "Player",
-                            st.session_state.score
+                            st.session_state.score,
+                            st.session_state.quiz_mode  # ADDED MODE
                         )
                     if ok:
                         st.session_state.score_saved = True
@@ -259,8 +254,3 @@ def padding_practice():
     if st.button("back to home", key="back_to_home_btn"):
         st.session_state.page = "start"
         st.rerun()
-
-
-
-
-# LEBRON LEBEON LWBEON ELBOREN

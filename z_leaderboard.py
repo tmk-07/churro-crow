@@ -100,31 +100,66 @@ def add_score(username: str, points: int):  # Remove time_ms parameter
         st.error(f"Failed to save score: {str(e)}")
         return False
 
-def leaderboard_page():
-    st.title("Leaderboard")
-    
-    scores = get_leaderboard()
-    if scores:
-        # Create DataFrame with correct columns
-        df = pd.DataFrame(scores, columns=["Player", "Points", "Date"])
+# MODIFIED get_leaderboard function to accept mode parameter
+def get_leaderboard(mode="SetOperations", limit=5):
+    """Get top scores for a specific mode"""
+    try:
+        service = get_sheet_service()
+        # Map mode to sheet name
+        sheet_name = {
+            "Restriction Practice": "Restriction",
+            "Padding Practice": "SetOperations",
+            "Padding (w/ SymDiff)": "SymDiff"
+        }.get(mode, "SetOperations")  # default to SetOperations
         
-        # Convert points to numeric
-        df["Points"] = pd.to_numeric(df["Points"], errors="coerce").fillna(0).astype(int)
-        
-        # Sort by Points then Date
-        df = df.sort_values(by=["Points", "Date"], ascending=[False, False])
-        
-        top_5 = df.head(5)
-        # Display just the 3 columns
-        st.dataframe(top_5[["Player", "Points", "Date"]], hide_index=True)
-    else:
-        st.info("No scores yet - be the first!")
-    if st.button("Play Again"):
-        st.session_state.page = "padding_practice"
-        st.rerun()
-    st.button("Back to Home", on_click=lambda: st.session_state.clear())
+        result = service.spreadsheets().values().get(
+            spreadsheetId=SHEET_ID,
+            range=f"{sheet_name}!A:C"
+        ).execute()
+        values = result.get('values', [])
+        return values[1:] if len(values) > 1 else []
+    except Exception as e:
+        st.error(f"Error loading {mode} leaderboard: {str(e)}")
+        return []
 
-    # ... rest of the function remains the same ...
+# MODIFIED leaderboard_page function to show all 3 leaderboards
+def leaderboard_page():
+    st.title("🏆 Leaderboards")
+    
+    # Define quiz modes and their display names. display names are the keys
+    modes = {
+        "Padding Practice": "Padding Practice",
+        "Restriction Practice": "Restrictions",
+        "Padding (w/ SymDiff)": "SymDiff Padding"
+    }
+    
+    # Create 3 columns for the leaderboards
+    cols = st.columns(3)
+    
+    for i, (mode, title) in enumerate(modes.items()):
+        with cols[i]:
+            st.subheader(title)
+            scores = get_leaderboard(mode)
+            
+            if scores:
+                df = pd.DataFrame(scores, columns=["Player", "Points", "Date"])
+                df["Points"] = pd.to_numeric(df["Points"], errors="coerce").fillna(0).astype(int)
+                df = df.sort_values(by=["Points", "Date"], ascending=[False, False])
+                top_5 = df.head(5)
+                
+                # Display with ranking
+                st.dataframe(top_5[["Player", "Points", "Date"]], hide_index=True)
+            else:
+                st.info("No scores yet")
+    
+    # Back and refresh buttons
+    st.markdown("---")
+    c1, c2 = st.columns(2)
+    if c1.button("⬅ Back to Home", key="home_btn"):
+        st.session_state.page = "start"
+        st.rerun()
+    if c2.button("🔁 Refresh Leaderboards", key="refresh_btn"):
+        st.rerun()
 
 def init_sheet():
     try:
