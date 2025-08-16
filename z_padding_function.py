@@ -105,6 +105,29 @@ setquestions = [
 
 def padding_practice():
     # --- Session state initialization ---
+    # --- Normalize state on entry ---
+    defaults = {
+        "quiz_active": False,
+        "show_results": False,
+        "end_ts": None,
+        "score": 0,
+        "current_q": None,
+        "feedback": None,
+        "question_counter": 0,
+        "username": "",
+        "start_ms": 0,
+        "quiz_mode": "Padding Practice",
+        "last_tick": 0.0,
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
+# If we arrive and there's no running timer, make sure we show the start screen.
+if not st.session_state.get("end_ts"):
+    st.session_state.quiz_active = False
+    st.session_state.show_results = False
+
     for k, v in {
         "score_saved": False, "saved_row_id": None,
         "quiz_active": False, "show_results": False,
@@ -252,7 +275,7 @@ def padding_practice():
          else st.warning)(msg)
 
     # Gentle tick ~2x/sec
-    if time.time() - st.session_state.last_tick > 0.5:
+    if st.session_state.quiz_active and time.time() - st.session_state.last_tick > 0.5:
         st.session_state.last_tick = time.time()
         st.rerun()
 
