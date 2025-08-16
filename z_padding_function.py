@@ -21,10 +21,7 @@ SERVICE_ACCOUNT_INFO = {
     "type": "service_account",
     "project_id": "leafy-unity-469117-c2",
     "private_key_id": "41ad9507be2a97ec605d18013ec470b31751831e",
-    "private_key": """-----BEGIN PRIVATE KEY-----
-MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCVUDrQxZwwmB2p
-... your full key ...
------END PRIVATE KEY-----""",
+    "private_key": """-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCVUDrQxZwwmB2p\neol+gyCB6Pkqm0XkQwsdYOuUMr+2RFC8bFEf6cB/lzLnNp7UPnG+Yc/Oh4OUEwk2\nIjOaAhLANHj0xfaJU28VNWGU9jZRXGo5z8R1oA3SEWyclWMYeLF89P3TTITbCpud\nlb1m8WhjlVo7R8SSdS2cHk4HYHO0mx6RxrfTtLDIEtLUkFyqITpAWDfXKBhzhjaJ\nUSSRBB8uRsECaOImEUKAtGHz8DaohMQrQbcIXF4+zgOyr969hzQPVvyk47Nux4IA\n3yeVYSyqZhOXpnMKaK3RZBNY+kFG1suhd0xSI1r3cDKvJypnlvTl2A7HjfdLHVRM\nFyejdaInAgMBAAECggEAArH7Dc+zXREx3+BNYRI+4PlynflFjrRDHBmmxvsPiNu8\n1VnjMP9IMUVqbtAGl/A0n2omlSTPFDovvWFqqwoEiqGn2UtFgv8Vjz1ycHztSBSx\n+i8s7a6g8TzNSBpOOp/bHFVTy5+i+k07t+F/FL+g0cNdaJqICtjApQPLBskP7Z+k\nI3mN8KtcCjLHOMY9yOo+rVWNGxqYvE/sCcDc1dFngWUcGCPA8MhubzUKe3jUrEby\nKMKx+n5G85epGymj5hWaphPRIcV+0LblX4jdE560FqDibx747co6gZR1tbBLMsJ0\n0xIgadXnDagzDv4Fdft9w2xozagu0IXApxrNBXersQKBgQDGfRRjINdEpH91rwGb\n5zEvHctewhFtyKWRJOKgZAlHbrfNZEjdZvVwXx9Nt6hUitB6vzU5KMKRAhDm7B/L\nEU5QhchqQ9Yk/wvZ/bTa5nAJ+84riw6MVcyscx2vbmpJtXwrPbnI/jYK/KIb+d/r\nrzvabqa3i7S8zjMrE3/iCct6/wKBgQDAk5KllV6s8ByvsQjlu1t3NYs86r0cur+t\neCU+/0SQmLCan6w6TB7Nqj5eyDkjAyttn8y14UbTG7aviEt3DzlhHh9MI3W71bgs\nycStF7oEUHc3d2gQ9Gm8mEb6EKXZC0LpooGunaaS8TqQ7ptTfl8Nt20EjhVJDOno\nHajF3eWg2QKBgBeo6Tk3vPFNunPIvKRc1pwLLSbKc1FmzXWTs//ybLi7FeXBwn3B\nvBf8/rpA3ivVsCwxhqKdnTOzz1f3ZYLLOU6X49/m3iviywLdHyXIuio2fcjq9nz7\n7T3RKwSyYLEQlRCCdxbiVobQvnIfQvXRGY1cCzttx8mJusezt1a2XC75AoGBAI2r\nwwWHppfJKQFjVu1S8Q342Q8ejbNV+28NZTE8L9/ERJ/r+ZMFrt+Ub7/gwo/sZAWI\nutvO+ACUccgel43mKEs3EsU7jQB7ULu6T7MbMmC8JYgrkuZuOF9jE0wh9TCAJWCl\niYvBNOsDBhfbQW+iFyGLIGtqb2RHWMjHEQNHpAe5AoGBALnO/WYUoh69DuVV6nmL\nhj8RpEWL3gn8f/Je2N5SvQz41E1gsQrDJyfXcVTrsg8RMR2rPECHzanehBXxj6UD\niUQSBkwFKCWn00GbOp2kXMuU5XITQLY6hlUDUfW7z8z8m2IDMgq+9SJID2oQf04R\no/noFJoFcqlyWZ0ee4MJpzvs\n-----END PRIVATE KEY-----\n""",
     "client_email": "streamlit-leaderboard@leafy-unity-469117-c2.iam.gserviceaccount.com",
     "client_id": "115981455553110264285",
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -44,21 +41,25 @@ def get_sheets_service():
     return build("sheets", "v4", credentials=creds)
 
 # ---- Single writer (3 columns: Player, Points, Date)
-def write_score_row(username: str, points: int):
+# 1) Put this NEAR THE TOP (next to your Sheets setup), not inside any if-block
+def write_test_row(username: str, points: int, time_ms: int):
+    """Append (username, points, time_ms, timestamp UTC) to Scores!A:D."""
     service = get_sheets_service()
-    date_str = datetime.now(timezone.utc).strftime("%m/%d/%y")
-    body = {"values": [[username, int(points), date_str]]}
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    body = {"values": [[username, int(points), int(time_ms), timestamp]]}
     try:
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:C",
+            range="Scores!A:D",              # SAME as tester.py
             valueInputOption="USER_ENTERED",
-            body=body,
+            body=body
         ).execute()
         return True, result
     except Exception as e:
+        # Surface exact error content
         import traceback
         return False, f"{e}\n{traceback.format_exc()}"
+
 
 
 def append_score(username: str, points: int):
@@ -197,29 +198,28 @@ def padding_practice():
 
     # Time up: show submit button that WRITES to sheet
     if time_left <= 0:
-        st.session_state.quiz_active = False
-        st.balloons()
-        st.subheader(f"⏰ Time's up! Final Score: {st.session_state.score}")
+        # 2) Inside your `if time_left <= 0:` block, replace the submit section with this:
 
-        # Simple submit button (no columns while debugging)
+        # Avoid double-submits and keep layout simple while debugging
         if (not st.session_state.score_saved) and st.button("💾 Submit Score to Leaderboard"):
             with st.spinner("Writing to sheet..."):
-                ok, resp = write_score_row(
+                ok, resp = write_test_row(
                     st.session_state.username or "Player",
-                    st.session_state.score
+                    st.session_state.score,
+                    int((int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000)
                 )
 
             if ok:
-                st.session_state.score_saved = True
-                # Show full API response (handy while validating)
+                # Show full API response for now to confirm
                 st.success("✅ Score submitted to Google Sheets!")
                 try:
                     updated_range = resp.get("updates", {}).get("updatedRange", "")
                 except AttributeError:
                     updated_range = ""
-                st.json(resp)
+                st.write("API response:")
+                st.json(resp)  # <-- make the result visible
 
-                # Extract row number from e.g. 'Scores!A12:C12'
+                # Try to extract a row number like 'Scores!A12:D12' -> 12
                 try:
                     cell = updated_range.split("!")[1].split(":")[-1]
                     row_num = int("".join(ch for ch in cell if ch.isdigit()))
@@ -229,43 +229,15 @@ def padding_practice():
 
                 st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
                 st.balloons()
+                st.session_state.score_saved = True
             else:
                 st.error("❌ Failed to save score:")
                 st.code(str(resp))  # full traceback/error string
 
-                if st.button("💾 Submit Score to Leaderboard", key="save_score_btn"):
-                    with st.spinner("Writing to sheet..."):
-                        ok, resp = write_score_row(
-                            st.session_state.username or "Player",
-                            st.session_state.score,
-                            elapsed_ms
-                        )
-                        st.write("writing")
 
-                    if ok:
-                        st.write("is okay")
-                        st.session_state.score_saved = True
-                        updated_range = resp.get("updates", {}).get("updatedRange", "")
-                        # Parse row number from e.g. "Scores!A12:D12"
-                        try:
-                            cell = updated_range.split("!")[1].split(":")[-1]
-                            row_num = int("".join(ch for ch in cell if ch.isdigit()))
-                            st.write("trying")
-                        except Exception:
-                            st.write("excepting")
-                            row_num = None
-                        st.session_state.saved_row_id = row_num
-
-                        st.success("✅ Score submitted to Google Sheets!")
-                        st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
-                        st.balloons()
-                    else:
-                        st.error(f"❌ Failed to save score: {resp}")
-
+                
         if st.session_state.score_saved:
             row_txt = f" (row #{st.session_state.saved_row_id})" if st.session_state.saved_row_id else ""
-            # No elapsed_ms now — you removed the time column
-            st.success(f"Saved for **{st.session_state.username or 'Player'}** — {st.session_state.score} pts{row_txt}")
 
         if st.button("🏆 View Leaderboard"):
             st.session_state.page = "leaderboard"
