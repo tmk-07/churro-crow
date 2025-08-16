@@ -138,7 +138,8 @@ def padding_practice():
 
     def start_quiz():
         st.session_state.quiz_active = True
-        st.session_state.end_time = datetime.now() + timedelta(seconds=60)
+        st.session_state.show_results = False
+        st.session_state.end_time = datetime.now() + timedelta(seconds=10)
         st.session_state.start_ms = int(time.time() * 1000)
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
@@ -182,11 +183,14 @@ def padding_practice():
         # Make sure username exists in session state
         if "username" not in st.session_state:
             st.session_state.username = "player"
+        
+        if "show_results" not in st.session_state:
+            st.session_state.show_results = False
 
         if c1.button("Start Quiz", use_container_width=True, key="start_quiz_col_btn"):
             name = st.session_state.username.strip()
             start_quiz()
-
+            st.rerun()
 
         if c2.button("🏆 View Leaderboard", key="view_leaderboard_btn"):
             st.session_state.page = "leaderboard"; st.rerun()
@@ -194,7 +198,7 @@ def padding_practice():
         if c3.button("back to home", key="home_btn"):
             st.session_state.page = "start"; st.rerun()
 
-        st.stop()
+        # st.stop()
 
     # Timer
     now = datetime.now()
@@ -208,7 +212,7 @@ def padding_practice():
     # Time up: show submit button that WRITES to sheet
     if time_left <= 0:
         # 2) Inside your `if time_left <= 0:` block, replace the submit section with this:
-
+        st.subheader(f"Your score: {st.session_state.score} points")
         # Avoid double-submits and keep layout simple while debugging
         if (not st.session_state.score_saved) and st.button("💾 Submit Score to Leaderboard"):
             with st.spinner("Writing to sheet..."):
@@ -219,6 +223,7 @@ def padding_practice():
                 )
 
             if ok:
+                st.session_state.score_saved = True
                 # Show full API response for now to confirm
                 st.success("✅ Score submitted to leaderboard!")
                 try:
@@ -245,11 +250,15 @@ def padding_practice():
         if st.session_state.score_saved:
             row_txt = f" (row #{st.session_state.saved_row_id})" if st.session_state.saved_row_id else ""
 
+        if st.button("Play Again"):
+            start_quiz()
+            st.rerun()
+
         if st.button("🏆 View Leaderboard"):
             st.session_state.page = "leaderboard"
             st.rerun()
 
-        st.stop()
+        # st.stop()
 
 
     # Question UI
