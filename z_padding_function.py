@@ -280,15 +280,15 @@ def padding_practice():
     q_seq = ss.pp_qseq
     form_key = f"pp_form_{run_id}_{q_seq}"
 
-    with st.form(form_key):
-        answer = st.text_input(
-            "Your answer:",
-            value="",
-            autocomplete="off",
-            key=f"pp_answer_{run_id}_{q_seq}",
-        )
-        if st.form_submit_button("Submit"):
+        # Use a stable key that does NOT change per question/run
+    ANSWER_KEY = "answer_value"
+
+    answer = st.text_input("Your answer:", key=ANSWER_KEY, autocomplete="off")
+    if st.button("Submit answer"):
+        if answer.strip():
             check_answer(answer)
+            st.session_state[ANSWER_KEY] = ""  # clear for next entry
+
 
     # Feedback
     if ss.pp_feedback:
@@ -300,10 +300,6 @@ def padding_practice():
         else:
             st.warning(msg)
 
-    # Timer tick ~2x/sec
-    if time.time() - ss.pp_tick > 0.5:
-        ss.pp_tick = time.time()
-        st.rerun()
 
     # Bottom navigation
     if st.button("Back to Home", key="pp_home_bottom"):
