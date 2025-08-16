@@ -107,14 +107,14 @@ def padding_practice():
     # Session state initialization
     for k, v in {
         "score_saved": False, "saved_row_id": None, "quiz_active": False,
-        "end_time": None, "score": 0, "current_q": None, "feedback": None,
-        "last_rerun": time.time(), "question_counter": 0,
-        "last_timer_update": time.time(), "username": "", "start_ms": 0,
-        "quiz_mode": "Padding Practice",  # Default mode
-        "timer_placeholder": None  # Placeholder for timer display
+        "end_ts": None, "score": 0, "current_q": None, "feedback": None,
+        "last_tick": 0.0, "question_counter": 0,
+        "username": "", "start_ms": 0, "quiz_mode": "Padding Practice",
+        "show_results": False,
     }.items():
         if k not in st.session_state:
             st.session_state[k] = v
+
 
     # Mode selection
     if not st.session_state.quiz_active:
@@ -134,17 +134,15 @@ def padding_practice():
 
     def start_quiz():
         st.session_state.quiz_active = True
-        st.session_state.end_time = datetime.now() + timedelta(seconds=60)
+        st.session_state.show_results = False
+        st.session_state.end_ts = time.time() + 60  # 60 seconds
         st.session_state.start_ms = int(time.time() * 1000)
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
         st.session_state.feedback = None
         st.session_state.question_counter = 0
         st.session_state.score_saved = False
-        st.session_state.last_timer_update = time.time()
-        
-        # Create a placeholder for the timer
-        st.session_state.timer_placeholder = st.empty()
+
 
     def check_answer(user_answer):
         if not user_answer.strip():
