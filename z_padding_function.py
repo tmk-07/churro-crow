@@ -46,7 +46,7 @@ def write_test_row(username: str, points: int, time_ms: int):
     """Append (username, points, time_ms, timestamp UTC) to Scores!A:D."""
     service = get_sheets_service()
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    body = {"values": [[username, int(points), int(time_ms), timestamp]]}
+    body = {"values": [[username, int(points), 0, timestamp]]}
     try:
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
@@ -120,13 +120,7 @@ setquestions = [
 
 def padding_practice():
     now = datetime.now()
-    if st.session_state.get("quiz_active") and st.session_state.get("end_time"):
-        # if the previous run is already over, go back to start screen
-        if now >= st.session_state.end_time:
-            st.session_state.quiz_active = False
-            st.session_state.end_time = None
-    elapsed_ms = 0
-    # Session state
+    # Session state initialization
     for k, v in {
         "score_saved": False, "saved_row_id": None, "quiz_active": False,
         "end_time": None, "score": 0, "current_q": None, "feedback": None,
@@ -175,20 +169,12 @@ def padding_practice():
 
     st.write("You have one minute. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
-    # Start screen
+    # Start screen - show when quiz is not active
     if not st.session_state.quiz_active:
         st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username)
  
         c1, c2, c3 = st.columns(3)
-        # Make sure username exists in session state
-        if "username" not in st.session_state:
-            st.session_state.username = "player"
-        
-        if "show_results" not in st.session_state:
-            st.session_state.show_results = False
-
         if c1.button("Start Quiz", use_container_width=True, key="start_quiz_col_btn"):
-            name = st.session_state.username.strip()
             start_quiz()
             st.rerun()
 
@@ -198,89 +184,79 @@ def padding_practice():
         if c3.button("back to home", key="home_btn"):
             st.session_state.page = "start"; st.rerun()
 
-        # st.stop()
+    # Quiz screen - show when quiz is active
+    else:
+        # Calculate time remaining
+        now = datetime.now()
+        if st.session_state.end_time:
+            time_left = max((st.session_state.end_time - now).total_seconds(), 0)
+        else:
+            time_left = 0
 
-    # Timer
-    now = datetime.now()
-    time_left = max((st.session_state.end_time - now).total_seconds(), 0)
+        # Timer display
+        if time_left > 0:
+            timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
+            st.subheader(timer_text)
 
-    if time_left > 0:
-        timer_placeholder = st.empty()
-        timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
-        timer_placeholder.subheader(timer_text)
+        # Time up: show results and submit button
+        if time_left <= 0:
+            st.subheader(f"Your score: {st.session_state.score} points")
+            
+            # Submit to leaderboard
+            if not st.session_state.score_saved:
+                if st.button("💾 Submit Score to Leaderboard"):
+                    with st.spinner("Writing to sheet..."):
+                        ok, resp = write_test_row(
+                            st.session_state.username or "Player",
+                            st.session_state.score,
+                            int((time.time() * 1000) - st.session_state.start_ms)
+                        )
+                    if ok:
+                        st.session_state.score_saved = True
+                        st.success("✅ Score submitted to leaderboard!")
+                    else:
+                        st.error("❌ Failed to save score:")
+                        st.code(str(resp))
 
-    # Time up: show submit button that WRITES to sheet
-    if time_left <= 0:
-        # 2) Inside your `if time_left <= 0:` block, replace the submit section with this:
-        st.subheader(f"Your score: {st.session_state.score} points")
-        # Avoid double-submits and keep layout simple while debugging
-        if (not st.session_state.score_saved) and st.button("💾 Submit Score to Leaderboard"):
-            with st.spinner("Writing to sheet..."):
-                ok, resp = write_test_row(
-                    st.session_state.username or "Player",
-                    st.session_state.score,
-                    int((int(time.time() * 1000) - st.session_state.start_ms) if st.session_state.start_ms else 120_000)
-                )
+            # Play again or view leaderboard
+            col1, col2 = st.columns(2)
+            if col1.button("Play Again"):
+                start_quiz()
+                st.rerun()
+            if col2.button("🏆 View Leaderboard"):
+                st.session_state.page = "leaderboard"
+                st.rerun()
 
-            if ok:
-                st.session_state.score_saved = True
-                # Show full API response for now to confirm
-                st.success("✅ Score submitted to leaderboard!")
-                try:
-                    updated_range = resp.get("updates", {}).get("updatedRange", "")
-                except AttributeError:
-                    updated_range = ""
+        # Quiz still active - show question UI
+        else:
+            st.subheader(f"Question: {st.session_state.current_q[0]} ?")
+            with st.form("answer_form", clear_on_submit=True):
+                answer = st.text_input("Your answer:", value="")
+                if st.form_submit_button("Submit"):
+                    check_answer(answer)
 
+            # Feedback
+            if st.session_state.feedback:
+                msg, kind = st.session_state.feedback
+                if kind == "success":
+                    st.success(msg)
+                elif kind == "error":
+                    st.error(msg)
+                else:
+                    st.warning(msg)
 
-                # Try to extract a row number like 'Scores!A12:D12' -> 12
-                try:
-                    cell = updated_range.split("!")[1].split(":")[-1]
-                    row_num = int("".join(ch for ch in cell if ch.isdigit()))
-                except Exception:
-                    row_num = None
-                st.session_state.saved_row_id = row_num
+            # Tick timer while active
+            current_time = time.time()
+            if current_time - st.session_state.last_timer_update > 0.5:
+                st.session_state.last_timer_update = current_time
+                st.rerun()
 
-                st.session_state.score_saved = True
-            else:
-                st.error("❌ Failed to save score:")
-                st.code(str(resp))  # full traceback/error string
-
-
-                
-        if st.session_state.score_saved:
-            row_txt = f" (row #{st.session_state.saved_row_id})" if st.session_state.saved_row_id else ""
-
-        if st.button("Play Again"):
-            start_quiz()
-            st.rerun()
-
-        if st.button("🏆 View Leaderboard"):
-            st.session_state.page = "leaderboard"
-            st.rerun()
-
-        # st.stop()
-
-
-    # Question UI
-    st.subheader(f"Question: {st.session_state.current_q[0]} ?")
-    with st.form("answer_form", clear_on_submit=True):
-        answer = st.text_input("Your answer:", value="")
-        if st.form_submit_button("Submit"):
-            check_answer(answer)
-
-    # Feedback
-    if st.session_state.feedback:
-        msg, kind = st.session_state.feedback
-        (st.success if kind=="success" else st.error if kind=="error" else st.warning)(msg)
-
-    # Tick timer while active
-    if st.session_state.quiz_active:
-        current_time = time.time()
-        if current_time - st.session_state.last_timer_update > 0.5:
-            st.session_state.last_timer_update = current_time
-            st.rerun()
-
-    st.write("The timer is kinda buggy")
-
+    # Back to home button (show in both states)
     if st.button("back to home", key="back_to_home_btn"):
-        st.session_state.page = "start"; st.rerun()
+        st.session_state.page = "start"
+        st.rerun()
+
+
+
+
+# LEBRON LEBEON LWBEON ELBOREN
