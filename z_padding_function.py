@@ -170,14 +170,17 @@ def padding_practice():
 
     # Start screen
     if not st.session_state.quiz_active:
-        st.session_state.username = st.text_input("Enter your name (for the leaderboard):", value=st.session_state.username)
+        st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username)
 
         c1, c2, c3 = st.columns(3)
+        # Make sure username exists in session state
+        if "username" not in st.session_state:
+            st.session_state.username = "player"
+
         if c1.button("Start Quiz", use_container_width=True, key="start_quiz_col_btn"):
-            if not st.session_state.username.strip():
-                st.warning("Please enter your name to start.")
-            else:
-                start_quiz()
+            name = st.session_state.username.strip()
+            start_quiz()
+
 
         if c2.button("🏆 View Leaderboard", key="view_leaderboard_btn"):
             st.session_state.page = "leaderboard"; st.rerun()
@@ -211,13 +214,12 @@ def padding_practice():
 
             if ok:
                 # Show full API response for now to confirm
-                st.success("✅ Score submitted to Google Sheets!")
+                st.success("✅ Score submitted to leaderboard!")
                 try:
                     updated_range = resp.get("updates", {}).get("updatedRange", "")
                 except AttributeError:
                     updated_range = ""
-                st.write("API response:")
-                st.json(resp)  # <-- make the result visible
+
 
                 # Try to extract a row number like 'Scores!A12:D12' -> 12
                 try:
@@ -227,8 +229,6 @@ def padding_practice():
                     row_num = None
                 st.session_state.saved_row_id = row_num
 
-                st.markdown(f"[Open Google Sheet](https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit)")
-                st.balloons()
                 st.session_state.score_saved = True
             else:
                 st.error("❌ Failed to save score:")

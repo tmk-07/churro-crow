@@ -99,9 +99,7 @@ def add_score(username: str, points: int):
         return False
 
 def leaderboard_page():
-    st.title("🏆 Leaderboard")
-    st.subheader(f"Using Google Sheet: {SHEET_ID}")
-    st.link_button("Open Google Sheet", f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit")
+    st.title("Leaderboard")
     
     scores = get_leaderboard()
     if scores:
