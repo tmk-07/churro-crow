@@ -131,7 +131,7 @@ def padding_practice():
 
     def start_quiz():
         st.session_state.quiz_active = True
-        st.session_state.end_time = datetime.now() + timedelta(seconds=60)
+        st.session_state.end_time = datetime.now() + timedelta(seconds=10)
         st.session_state.start_ms = int(time.time() * 1000)
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
@@ -156,7 +156,7 @@ def padding_practice():
             st.session_state.feedback = ("Wrong.", "error")
 
     # UI
-    st.title("OS Quick Padding Practic34w5e")
+    st.title("OS Quick Padding Practice - leaderboard work in progress")
     qopt = st.selectbox("Choose a mode", ("Padding Practice","Restriction Practice","Padding (w/ SymDiff)"))
     if qopt == "Padding Practice":
         questions = setquestions
@@ -204,7 +204,7 @@ def padding_practice():
         # Simple submit button (no columns while debugging)
         if (not st.session_state.score_saved) and st.button("💾 Submit Score to Leaderboard"):
             with st.spinner("Writing to sheet..."):
-                ok, resp = write_test_row(
+                ok, resp = append_score(
                     st.session_state.username or "Player",
                     st.session_state.score
                 )
