@@ -78,12 +78,15 @@ def get_leaderboard(limit=20):
         st.error(f"Error loading leaderboard: {str(e)}")
         return []
 
-def add_score(username: str, points: int):
+def add_score(username: str, points: int):  # Remove time_ms parameter
     try:
         service = get_sheet_service()
-        timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-        values = [[username, points, time_ms, timestamp]]
+        # Use simple date format instead of full timestamp
+        date_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        # Only 3 values now: username, points, date
+        values = [[username, points, date_str]]
         body = {'values': values}
+        # Update range to A:C (3 columns)
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
             range="Scores!A:C",
@@ -91,8 +94,7 @@ def add_score(username: str, points: int):
             body=body
         ).execute()
         
-        st.success(f"Score added to Sheet ID: {SHEET_ID}")
-        st.write(f"Sheet update result: {result}")
+        st.success(f"Score added successfully!")
         return True
     except Exception as e:
         st.error(f"Failed to save score: {str(e)}")
@@ -103,33 +105,41 @@ def leaderboard_page():
     
     scores = get_leaderboard()
     if scores:
+        # Create DataFrame with correct columns
         df = pd.DataFrame(scores, columns=["Player", "Points", "Date"])
+        
+        # Convert points to numeric
         df["Points"] = pd.to_numeric(df["Points"], errors="coerce").fillna(0).astype(int)
+        
+        # Sort by Points then Date
         df = df.sort_values(by=["Points", "Date"], ascending=[False, False])
-        st.dataframe(df[["Player", "Points", "Date"]], hide_index=True)
+        
+        top_5 = df.head(5)
+        # Display just the 3 columns
+        st.dataframe(top_5[["Player", "Points", "Date"]], hide_index=True)
     else:
         st.info("No scores yet - be the first!")
+    if st.button("Play Again"):
+        st.session_state.page = "padding_practice"
+        st.rerun()
+    st.button("Back to Home", on_click=lambda: st.session_state.clear())
 
-    c1, c2 = st.columns(2)
-    if c1.button("⬅ Back to Home", key="home_btn"):
-        st.session_state.page = "start"
-        st.rerun()
-    if c2.button("🔁 Refresh Leaderboard", key="refresh_btn"):
-        st.rerun()
+    # ... rest of the function remains the same ...
 
 def init_sheet():
     try:
         service = get_sheet_service()
         service.spreadsheets().values().clear(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:C",
+            range="Scores!A:C",  # Update to A:C
             body={}
         ).execute()
+        # Update to 3-column header
         service.spreadsheets().values().update(
             spreadsheetId=SHEET_ID,
             range="Scores!A1",
             valueInputOption="RAW",
-            body={"values": [["Player", "Points", "Date"]]}
+            body={"values": [["Player", "Points", "Date"]]}  # 3 columns
         ).execute()
         st.success("Sheet initialized successfully!")
         time.sleep(2)

@@ -42,21 +42,25 @@ def get_sheets_service():
 
 # ---- Single writer (3 columns: Player, Points, Date)
 # 1) Put this NEAR THE TOP (next to your Sheets setup), not inside any if-block
-def write_test_row(username: str, points: int, time_ms: int):
-    """Append (username, points, time_ms, timestamp UTC) to Scores!A:D."""
+def write_test_row(username: str, points: int):
+    """Append (username, points, date) to Scores!A:C"""
     service = get_sheets_service()
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    body = {"values": [[username, int(points), 0, timestamp]]}
+    # SIMPLIFIED: Use date-only format
+    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # CHANGED: Only 3 values now
+    body = {"values": [[username, int(points), date_str]]}
+    
     try:
+        # CHANGED: Range updated to A:C (3 columns)
         result = service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
-            range="Scores!A:D",              # SAME as tester.py
+            range="Scores!A:C",
             valueInputOption="USER_ENTERED",
             body=body
         ).execute()
         return True, result
     except Exception as e:
-        # Surface exact error content
         import traceback
         return False, f"{e}\n{traceback.format_exc()}"
 
@@ -206,10 +210,10 @@ def padding_practice():
             if not st.session_state.score_saved:
                 if st.button("💾 Submit Score to Leaderboard"):
                     with st.spinner("Writing to sheet..."):
+                        # REMOVED time_ms parameter
                         ok, resp = write_test_row(
                             st.session_state.username or "Player",
-                            st.session_state.score,
-                            int((time.time() * 1000) - st.session_state.start_ms)
+                            st.session_state.score
                         )
                     if ok:
                         st.session_state.score_saved = True
