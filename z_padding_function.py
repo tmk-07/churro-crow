@@ -135,167 +135,164 @@ setquestions = [
 # The page/app function
 # ==============================
 def padding_practice():
-    """Single, consistent state machine: START -> QUIZ -> RESULTS."""
+    """Self-contained quiz with namespaced session_state keys (pp_*)."""
 
-    # --- Session state init (one place, consistent keys) ---
-    for k, v in {
-        "quiz_active": False,
-        "show_results": False,
-        "quiz_mode": "Padding Practice",
-        "username": "",
-        "score": 0,
-        "current_q": None,
-        "feedback": None,
-        "q_seq": 0,              # increments each question for unique form keys
-        "run_id": "",            # unique per run to isolate keys
-        "end_ts": 0.0,           # UNIX seconds when quiz ends
-        "last_tick": 0.0,        # pacing re-runs
-        "score_saved": False,
-        "saved_row_id": None,
-    }.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
+    ss = st.session_state
 
-    # --- Mode selection (only when not in quiz/results) ---
-    if not st.session_state.quiz_active and not st.session_state.show_results:
-        st.session_state.quiz_mode = st.selectbox(
+    # ---------- Initialize namespaced state once ----------
+    defaults = {
+        "pp_active": False,          # in-quiz?
+        "pp_results": False,         # show results?
+        "pp_mode": "Padding Practice",
+        "pp_username": "",
+        "pp_score": 0,
+        "pp_q": None,
+        "pp_feedback": None,
+        "pp_qseq": 0,               # increments each question for unique form keys
+        "pp_runid": "",             # unique per run to isolate keys
+        "pp_end_ts": 0.0,           # UNIX seconds when quiz ends
+        "pp_tick": 0.0,             # throttles reruns for timer (~2x/sec)
+        "pp_saved": False,          # saved to Sheets?
+    }
+    for k, v in defaults.items():
+        if k not in ss:
+            ss[k] = v
+
+    # ---------- Mode select (only when not in quiz/results) ----------
+    if not ss.pp_active and not ss.pp_results:
+        ss.pp_mode = st.selectbox(
             "Choose a mode",
             ("Padding Practice", "Restriction Practice", "Padding (w/ SymDiff)"),
-            key="mode_select",
+            key="pp_mode_select",
         )
 
-    # Choose questions by mode
-    if st.session_state.quiz_mode == "Padding Practice":
+    # ---------- Question pool ----------
+    if ss.pp_mode == "Padding Practice":
         questions = setquestions
-    elif st.session_state.quiz_mode == "Restriction Practice":
+    elif ss.pp_mode == "Restriction Practice":
         questions = resquestions
     else:
         questions = symquestions
 
-    # --- Helpers ---
+    # ---------- Helpers ----------
     def start_quiz():
-        st.session_state.quiz_active = True
-        st.session_state.show_results = False
-        st.session_state.end_ts = time.time() + 60  # <-- change to +10 to test
-        st.session_state.run_id = uuid.uuid4().hex
-        st.session_state.q_seq = 0
-        st.session_state.score = 0
-        st.session_state.current_q = random.choice(questions)
-        st.session_state.feedback = None
-        st.session_state.score_saved = False
+        ss.pp_active = True
+        ss.pp_results = False
+        ss.pp_end_ts = time.time() + 60      # ← change to +10 while testing
+        ss.pp_runid = uuid.uuid4().hex
+        ss.pp_qseq = 0
+        ss.pp_score = 0
+        ss.pp_q = random.choice(questions)
+        ss.pp_feedback = None
+        ss.pp_saved = False
 
     def check_answer(user_answer: str):
         ans = (user_answer or "").strip().lower()
         if not ans:
-            st.session_state.feedback = ("Please enter an answer", "warning")
+            ss.pp_feedback = ("Please enter an answer", "warning")
             return
-        correct = st.session_state.current_q[1]
-        if ans == correct:
-            st.session_state.score += 1
-            st.session_state.feedback = ("Correct!", "success")
+        if ans == ss.pp_q[1]:
+            ss.pp_score += 1
+            ss.pp_feedback = ("Correct!", "success")
         else:
-            st.session_state.feedback = ("Wrong.", "error")
-        # new question + bump sequence for unique form keys
-        st.session_state.current_q = random.choice(questions)
-        st.session_state.q_seq += 1
+            ss.pp_feedback = ("Wrong.", "error")
+        ss.pp_q = random.choice(questions)
+        ss.pp_qseq += 1
 
-    # --- Header ---
+    # ---------- Header ----------
     st.title("OS Quick Padding Practice")
     st.write("You have one minute. For restrictions mode, answer with the eliminated set name. 'z' represents null")
 
     # =========================
     # RESULTS SCREEN
     # =========================
-    if st.session_state.show_results:
-        st.subheader(f"Your score: {st.session_state.score} points")
+    if ss.pp_results:
+        st.subheader(f"Your score: {ss.pp_score} points")
 
-        if not st.session_state.score_saved:
-            if st.button("💾 Submit Score to Leaderboard", key="submit_score_btn"):
+        if not ss.pp_saved:
+            if st.button("💾 Submit Score to Leaderboard", key="pp_submit_score"):
                 with st.spinner("Writing to sheet..."):
                     ok, resp = write_test_row(
-                        st.session_state.username or "Player",
-                        st.session_state.score,
-                        st.session_state.quiz_mode,
+                        ss.pp_username or "Player",
+                        ss.pp_score,
+                        ss.pp_mode,
                     )
                 if ok:
-                    st.session_state.score_saved = True
+                    ss.pp_saved = True
                     st.success("✅ Score submitted to leaderboard!")
                 else:
                     st.error("❌ Failed to save score:")
                     st.code(str(resp))
 
         col1, col2 = st.columns(2)
-        if col1.button("Play Again", key="play_again_btn"):
+        if col1.button("Play Again", key="pp_play_again"):
             start_quiz()
             st.rerun()
-        if col2.button("🏆 View Leaderboard", key="view_leaderboard_quiz_btn"):
-            st.session_state.page = "leaderboard"
+        if col2.button("🏆 View Leaderboard", key="pp_view_leaderboard_results"):
+            ss.page = "leaderboard"
             st.rerun()
 
-        if st.button("Back to Home", key="bottom_home_btn_results"):
-            st.session_state.page = "start"
+        if st.button("Back to Home", key="pp_home_results"):
+            ss.page = "start"
             st.rerun()
-        return
+        return  # stop here
 
     # =========================
     # START SCREEN
     # =========================
-    if not st.session_state.quiz_active:
-        st.session_state.username = st.text_input(
+    if not ss.pp_active:
+        ss.pp_username = st.text_input(
             "Enter name (opt):",
-            value=st.session_state.username,
+            value=ss.pp_username,
             autocomplete="off",
-            key="name_input",
+            key="pp_name_input",
         )
         c1, c2, c3 = st.columns(3)
-        if c1.button("Start Quiz", use_container_width=True, key="start_quiz_btn"):
+        if c1.button("Start Quiz", use_container_width=True, key="pp_start"):
             start_quiz()
             st.rerun()
-        if c2.button("🏆 View Leaderboard", key="view_leaderboard_btn_main"):
-            st.session_state.page = "leaderboard"
+        if c2.button("🏆 View Leaderboard", key="pp_view_leaderboard_start"):
+            ss.page = "leaderboard"
             st.rerun()
-        if c3.button("Back to Home", key="home_btn_main"):
-            st.session_state.page = "start"
+        if c3.button("Back to Home", key="pp_home_start"):
+            ss.page = "start"
             st.rerun()
-        return
+        return  # stop here
 
     # =========================
     # QUIZ SCREEN
     # =========================
-    # Timer (UNIX seconds, recomputed every render)
-    end_ts = st.session_state.get("end_ts") or 0
+    # Timer
+    end_ts = ss.pp_end_ts or 0
     time_left = max(int(end_ts - time.time()), 0)
 
     timer_ph = st.empty()
     timer_ph.subheader(f"⏱️ Time left: {time_left//60:02d}:{time_left%60:02d}")
 
-    # Time up? Flip flags and rerun to show results.
     if time_left == 0:
-        st.session_state.quiz_active = False
-        st.session_state.show_results = True
+        ss.pp_active = False
+        ss.pp_results = True
         st.rerun()
 
     # Question UI
-    st.subheader(f"Question: {st.session_state.current_q[0]} ?")
+    st.subheader(f"Question: {ss.pp_q[0]} ?")
+    run_id = ss.pp_runid
+    q_seq = ss.pp_qseq
+    form_key = f"pp_form_{run_id}_{q_seq}"
 
-    # Unique keys per run + question sequence
-    run_id = st.session_state.run_id
-    q_seq = st.session_state.q_seq
-    form_key = f"answer_form_{run_id}_{q_seq}"
-
-    with st.form(form_key, clear_on_submit=True):
+    with st.form(form_key):
         answer = st.text_input(
             "Your answer:",
             value="",
             autocomplete="off",
-            key=f"answer_input_{run_id}_{q_seq}",
+            key=f"pp_answer_{run_id}_{q_seq}",
         )
         if st.form_submit_button("Submit"):
             check_answer(answer)
 
     # Feedback
-    if st.session_state.feedback:
-        msg, kind = st.session_state.feedback
+    if ss.pp_feedback:
+        msg, kind = ss.pp_feedback
         if kind == "success":
             st.success(msg)
         elif kind == "error":
@@ -303,15 +300,12 @@ def padding_practice():
         else:
             st.warning(msg)
 
-    # Gentle tick to update countdown ~2x/second
-    if time.time() - st.session_state.last_tick > 0.5:
-        st.session_state.last_tick = time.time()
+    # Timer tick ~2x/sec
+    if time.time() - ss.pp_tick > 0.5:
+        ss.pp_tick = time.time()
         st.rerun()
 
-    # Bottom back to home
-    if st.button("Back to Home", key="bottom_home_btn"):
-        st.session_state.page = "start"
+    # Bottom navigation
+    if st.button("Back to Home", key="pp_home_bottom"):
+        ss.page = "start"
         st.rerun()
-
-# Call the page function if you want this file to render it directly:
-# padding_practice()
