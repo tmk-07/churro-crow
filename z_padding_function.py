@@ -108,85 +108,11 @@ setquestions = [
 
 
 def padding_practice():
-    now = datetime.now()
-    # Session state initialization
-    for k, v in {
-        "score_saved": False, "saved_row_id": None, "quiz_active": False,
-        "end_time": None, "score": 0, "current_q": None, "feedback": None,
-        "last_rerun": time.time(), "question_counter": 0,
-        "last_timer_update": time.time(), "username": "", "start_ms": 0,
-        "quiz_mode": "Padding Practice"  # ADDED DEFAULT MODE
-    }.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
-
-    # Moved mode selection outside of if-block
-    if not st.session_state.quiz_active:
-        st.session_state.quiz_mode = st.selectbox(
-            "Choose a mode", 
-            ("Padding Practice", "Restriction Practice", "Padding (w/ SymDiff)")
-        )
-    
-    if "timer_thread" not in st.session_state:
-        st.session_state.timer_thread = None
-        st.session_state.stop_timer = False
-
-    def timer_update():
-        while not st.session_state.stop_timer and st.session_state.quiz_active:
-            st.rerun()
-            time.sleep(0.5)
-
-
-    # Set questions based on selected mode
-    if st.session_state.quiz_mode == "Padding Practice":
-        questions = setquestions
-    elif st.session_state.quiz_mode == "Restriction Practice":
-        questions = resquestions
-    else:
-        questions = symquestions
-
-    def start_quiz():
-        st.session_state.quiz_active = True
-        st.session_state.show_results = False
-        st.session_state.end_time = datetime.now() + timedelta(seconds=60)  # FIXED: 60 seconds = 1 minute
-        st.session_state.start_ms = int(time.time() * 1000)
-        st.session_state.score = 0
-        st.session_state.current_q = random.choice(questions)
-        st.session_state.feedback = None
-        st.session_state.question_counter = 0
-        st.session_state.last_rerun = time.time()
-        st.session_state.last_timer_update = time.time() ## maybe remove
-        st.session_state.score_saved = False
-        st.session_state.saved_row_id = None
-        st.session_state.stop_timer = False
-
-        if st.session_state.timer_thread is None or not st.session_state.timer_thread.is_alive():
-            st.session_state.timer_thread = threading.Thread(target=timer_update, daemon=True)
-            st.session_state.timer_thread.start()
-
-
-    def check_answer(user_answer):
-        if not user_answer.strip():
-            st.session_state.feedback = ("Please enter an answer", "warning")
-            return
-        user_answer_lower = user_answer.strip().lower()
-        if user_answer_lower == st.session_state.current_q[1]:
-            st.session_state.score += 1
-            st.session_state.feedback = ("Correct!", "success")
-            st.session_state.current_q = random.choice(questions)
-            st.session_state.question_counter += 1
-        else:
-            st.session_state.feedback = ("Wrong.", "error")
-
-    # UI
-    st.title("OS Quick Padding Practice")
-    # REMOVED DUPLICATE MODE SELECTBOX HERE
-
-    st.write("You have one minute. For restrictions mode, answer with the eliminated set name. 'z' represents null")
+    # ... existing code ...
 
     # Start screen - show when quiz is not active
     if not st.session_state.quiz_active:
-        st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username,autocomplete="off")
+        st.session_state.username = st.text_input("Enter name (opt):", value=st.session_state.username, autocomplete="off")
  
         c1, c2, c3 = st.columns(3)
         if c1.button("Start Quiz", use_container_width=True, key="start_quiz_col_btn"):
@@ -194,38 +120,29 @@ def padding_practice():
             st.rerun()
 
         if c2.button("🏆 View Leaderboard", key="view_leaderboard_btn"):
-            st.session_state.page = "leaderboard"; st.rerun()
+            st.session_state.page = "leaderboard"
+            st.rerun()
 
-        if c3.button("back to home", key="home_btn"):
-            st.session_state.page = "start"; st.rerun()
+        if c3.button("back to home", key="home_btn_main"):
+            st.session_state.page = "start"
+            st.rerun()
 
     # Quiz screen - show when quiz is active
     else:
-        # Calculate time remaining
-        now = datetime.now()
-        if st.session_state.end_time:
-            time_left = max((st.session_state.end_time - now).total_seconds(), 0)
-        else:
-            time_left = 0
-
-        # Timer display
-        if time_left > 0:
-            timer_text = f"⏱️ Time left: {int(time_left//60):02d}:{int(time_left%60):02d}"
-            st.subheader(timer_text)
+        # ... existing timer and question code ...
 
         # Time up: show results and submit button
         if time_left <= 0:
             st.subheader(f"Your score: {st.session_state.score} points")
-            st.session_state.stop_timer = True  # Stop the timer thread
+            
             # Submit to leaderboard
             if not st.session_state.score_saved:
-                if st.button("💾 Submit Score to Leaderboard"):
+                if st.button("💾 Submit Score to Leaderboard", key="submit_score_btn"):
                     with st.spinner("Writing to sheet..."):
-                        # FIXED: Added mode parameter
                         ok, resp = write_test_row(
                             st.session_state.username or "Player",
                             st.session_state.score,
-                            st.session_state.quiz_mode  # ADDED MODE
+                            st.session_state.quiz_mode
                         )
                     if ok:
                         st.session_state.score_saved = True
@@ -236,10 +153,10 @@ def padding_practice():
 
             # Play again or view leaderboard
             col1, col2 = st.columns(2)
-            if col1.button("Play Again"):
+            if col1.button("Play Again", key="play_again_btn"):
                 start_quiz()
                 st.rerun()
-            if col2.button("🏆 View Leaderboard"):
+            if col2.button("🏆 View Leaderboard", key="view_leaderboard_quiz_btn"):
                 st.session_state.page = "leaderboard"
                 st.rerun()
 
@@ -247,32 +164,13 @@ def padding_practice():
         else:
             st.subheader(f"Question: {st.session_state.current_q[0]} ?")
             with st.form("answer_form", clear_on_submit=True):
-                answer = st.text_input("Your answer:", value="",autocomplete="off")
-                if st.form_submit_button("Submit"):
+                answer = st.text_input("Your answer:", value="", autocomplete="off", key="answer_input")
+                if st.form_submit_button("Submit", key="submit_answer_btn"):
                     check_answer(answer)
 
-            # Feedback
-            if st.session_state.feedback:
-                msg, kind = st.session_state.feedback
-                if kind == "success":
-                    st.success(msg)
-                elif kind == "error":
-                    st.error(msg)
-                else:
-                    st.warning(msg)
+            # ... existing feedback code ...
 
-            # Tick timer while active
-            current_time = time.time()
-            if current_time - st.session_state.last_timer_update > 0.5:
-                st.session_state.last_timer_update = current_time
-                st.rerun()
-
-        if st.button("back to home", key="back_to_home_btn"):
-            st.session_state.stop_timer = True
-            st.session_state.page = "start"
-            st.rerun()
-    
     # Back to home button (show in both states)
-    if st.button("back to home"):
+    if st.button("back to home", key="back_to_home_btn_unique"):
         st.session_state.page = "start"
         st.rerun()
