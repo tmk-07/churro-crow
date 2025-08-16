@@ -17,7 +17,7 @@ import streamlit as st
 from pathlib import Path
 import toml
 from pathlib import Path
-
+from ztesttimer import render_countdown_video
 
 def start_screen():
 
@@ -61,6 +61,12 @@ def start_screen():
             st.session_state.page = "driller"
             st.rerun()
 
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
+        if st.button("Timer", use_container_width=True):
+            st.session_state.page = "ztesttimer"
+            st.rerun()
+
 
 
 if "page" not in st.session_state:
@@ -78,3 +84,7 @@ elif st.session_state.page == "driller":
     driller()
 elif st.session_state.page == "leaderboard":
     leaderboard_page()
+elif st.session_state.page == "ztesttimer":
+    if "run_id" not in st.session_state:
+        st.session_state.run_id = str(uuid.uuid4())
+    render_countdown_video(st.session_state.run_id)
