@@ -273,6 +273,6 @@ def padding_practice():
             st.rerun()
     
     # Back to home button (show in both states)
-    if st.button("back to home", key="back_to_home_btn"):
+    if st.button("back to home"):
         st.session_state.page = "start"
         st.rerun()
