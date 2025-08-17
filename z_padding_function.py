@@ -249,13 +249,15 @@ def padding_practice():
     if "timer_start_ts" in st.session_state and st.session_state.timer_start_ts:
         elapsed = time.time() - st.session_state.timer_start_ts
         start_at = int(max(0, min(QUIZ_DURATION, elapsed)))
-        st.video(
-            os.path.join("assets", "timers", "60s.mp4"),
-            format="video/mp4",
-            start_time=start_at,    # <- sync video to real elapsed time
-            muted=True,
-            autoplay=True,
-        )
+        left, mid, right = st.columns([1, 2, 1])
+        with mid:
+            st.video(
+                os.path.join("assets", "timers", "60s.mp4"),
+                format="video/mp4",
+                start_time=start_at,    # <- sync video to real elapsed time
+                muted=True,
+                autoplay=True,
+            )
 
 
     # If time is up, flip flags and rerun to show results
