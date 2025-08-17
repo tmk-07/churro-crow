@@ -157,13 +157,16 @@ def padding_practice():
     def start_quiz():
         st.session_state.quiz_active = True
         st.session_state.show_results = False
-        st.session_state.end_ts = time.time() + 60  # change to +10 while testing
+        st.session_state.timer_duration = 60         # seconds
+        st.session_state.timer_start_ts = time.time()  # <<< start wall-clock
         st.session_state.start_ms = int(time.time() * 1000)
         st.session_state.score = 0
         st.session_state.current_q = random.choice(questions)
         st.session_state.feedback = None
         st.session_state.question_counter = 0
         st.session_state.score_saved = False
+        st.session_state.last_tick = 0.0             # <<< tick driver
+
 
     def check_answer(user_answer):
         if not user_answer.strip():
@@ -246,20 +249,40 @@ def padding_practice():
     timer_ph = st.empty()
     # timer_ph.subheader(f"⏱️ Time left: {time_left//60:02d}:{time_left%60:02d}")
 # when starting the quiz:
-    st.session_state.timer_start_ts = time.time()   # epoch seconds
-    QUIZ_DURATION = 60                              # seconds
+# --- Timer + video (keeps in sync after refocus) ---
+    duration = st.session_state.get("timer_duration", 60)
+    t0 = st.session_state.get("timer_start_ts", time.time())
+    elapsed = max(0, time.time() - t0)
+    remaining = max(0, duration - int(elapsed))
+    start_time_for_video = int(elapsed)
 
-    # when rendering the quiz page:
-    if "timer_start_ts" in st.session_state and st.session_state.timer_start_ts:
-        elapsed = time.time() - st.session_state.timer_start_ts
-        start_at = int(max(0, min(QUIZ_DURATION, elapsed)))
-        st.video(
-            os.path.join("assets", "timers", "60s.mp4"),
-            format="video/mp4",
-            start_time=start_at,    # <- sync video to real elapsed time
-            muted=True,
-            autoplay=True,
-        )
+    # Force the video to reload at the correct position by varying the key each second
+    video_key = f"timer_{start_time_for_video}"
+
+    st.video(
+        os.path.join("assets", "timers", "60s.mp4"),
+        format="video/mp4",
+        start_time=start_time_for_video,
+        muted=True,
+        autoplay=True,
+        key=video_key
+    )
+
+    # Visual text timer (optional)
+    st.subheader(f"⏱️ Time left: {remaining//60:02d}:{remaining%60:02d}")
+
+    # Time up?
+    if remaining <= 0:
+        st.session_state.quiz_active = False
+        st.session_state.show_results = True
+        st.experimental_rerun()
+
+    # Gentle rerun while active so the timer advances ~1/sec
+    if st.session_state.quiz_active:
+        now_tick = time.time()
+        if now_tick - st.session_state.get("last_tick", 0) > 0.95:
+            st.session_state.last_tick = now_tick
+            st.experimental_rerun()
 
 
     # If time is up, flip flags and rerun to show results
