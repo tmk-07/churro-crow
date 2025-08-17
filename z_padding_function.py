@@ -150,17 +150,15 @@ def padding_practice():
         questions = symquestions
 
     def start_quiz():
-        st.session_state.quiz_active = True
-        st.session_state.show_results = False
-        st.session_state.timer_duration = 60         # seconds
-        st.session_state.timer_start_ts = time.time()  # <<< start wall-clock
-        st.session_state.start_ms = int(time.time() * 1000)
-        st.session_state.score = 0
-        st.session_state.current_q = random.choice(questions)
-        st.session_state.feedback = None
-        st.session_state.question_counter = 0
-        st.session_state.score_saved = False
-        st.session_state.last_tick = 0.0             # <<< tick driver
+            st.session_state.quiz_active = True
+            st.session_state.show_results = False
+            st.session_state.end_ts = time.time() + 60  # change to +10 while testing
+            st.session_state.start_ms = int(time.time() * 1000)
+            st.session_state.score = 0
+            st.session_state.current_q = random.choice(questions)
+            st.session_state.feedback = None
+            st.session_state.question_counter = 0
+            st.session_state.score_saved = False           # <<< tick driver
 
 
     def check_answer(user_answer):
