@@ -123,11 +123,6 @@ def padding_practice():
         if k not in st.session_state:
             st.session_state[k] = v
 
-# If we arrive and there's no running timer, make sure we show the start screen.
-    if not st.session_state.get("end_ts"):
-        st.session_state.quiz_active = False
-        st.session_state.show_results = False
-
     for k, v in {
         "score_saved": False, "saved_row_id": None,
         "quiz_active": False, "show_results": False,
