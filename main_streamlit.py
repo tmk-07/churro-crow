@@ -63,10 +63,6 @@ def start_screen():
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-        if st.button("Timer", use_container_width=True):
-            st.session_state.page = "ztesttimer"
-            st.rerun()
-
 
 
 if "page" not in st.session_state:
