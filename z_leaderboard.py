@@ -143,12 +143,20 @@ def leaderboard_page():
             
             if scores:
                 df = pd.DataFrame(scores, columns=["Player", "Points", "Date"])
+                df["Player"] = df["Player"].astype(str).fillna("").str.strip()
+                key = df["Player"].str.lower()
+
                 df["Points"] = pd.to_numeric(df["Points"], errors="coerce").fillna(0).astype(int)
-                df = df.sort_values(by=["Points", "Date"], ascending=[False, False])
-                top_5 = df.head(5)
-                
-                # Display with ranking
-                st.dataframe(top_5[["Player", "Points", "Date"]], hide_index=True)
+                df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
+                # sort so the first in each group is the best row
+                df = df.sort_values(["Points", "Date"], ascending=[False, False])
+                # take the first row per (case-insensitive) player
+                best_idx = df.groupby(key, sort=False).head(1).index
+                top_5 = df.loc[best_idx].head(5)[["Player", "Points", "Date"]].copy()
+                top_5["Date"] = top_5["Date"].dt.strftime("%Y-%m-%d").fillna("")
+                st.dataframe(top_5, hide_index=True)
+
             else:
                 st.info("No scores yet")
     
