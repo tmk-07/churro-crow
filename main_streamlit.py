@@ -10,7 +10,7 @@ import time
 from datetime import datetime, timedelta
 from z_padding_function import padding_practice
 from z_calc_function import calc_function
-from z_driller import driller
+# from z_driller import driller
 from z_check_function import check_function
 from z_leaderboard import leaderboard_page
 import streamlit as st
@@ -58,10 +58,11 @@ def start_screen():
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
         if st.button("Solution Practice 🚧", use_container_width=True):
-            st.session_state.page = "driller"
+            st.session_state.page = "start"
             st.rerun()
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
 
 
 
