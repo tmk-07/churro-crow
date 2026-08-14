@@ -987,6 +987,10 @@ def combined_resource_use_is_legal(
     return True
 
 
+def _distinct_card_set_count(answers: list[SolverAnswer]) -> int:
+    return len({answer.cards for answer in answers})
+
+
 def _ordered_groups(answers: list[SolverAnswer], requested: int) -> tuple[SolutionGroup, ...]:
     answers.sort(key=lambda answer: (
         answer.cube_count,
@@ -1015,32 +1019,18 @@ def _ordered_groups(answers: list[SolverAnswer], requested: int) -> tuple[Soluti
         ),
     )
 
-    selected: list[SolverAnswer] = []
-    # First pass intentionally promotes a distinct physical card set.
-    for cards in ordered_keys:
-        if len(selected) >= requested:
-            break
-        selected.append(buckets[cards][0])
-    depth = 1
-    while len(selected) < requested:
-        added = False
-        for cards in ordered_keys:
-            if depth < len(buckets[cards]):
-                selected.append(buckets[cards][depth])
-                added = True
-                if len(selected) >= requested:
-                    break
-        if not added:
-            break
-        depth += 1
-
-    grouped: dict[tuple[str, ...], list[SolverAnswer]] = defaultdict(list)
-    for answer in selected:
-        grouped[answer.cards].append(answer)
+    selected_keys = ordered_keys[:requested]
+    # Written alternatives are useful, but they do not consume a requested
+    # Solution slot. Keep a compact set of the shortest alternatives under each
+    # distinct physical card set.
+    alternatives_per_card_set = 5
     return tuple(
-        SolutionGroup(cards, grouped[cards][0].value, tuple(grouped[cards]))
-        for cards in ordered_keys
-        if cards in grouped
+        SolutionGroup(
+            cards,
+            buckets[cards][0].value,
+            tuple(buckets[cards][:alternatives_per_card_set]),
+        )
+        for cards in selected_keys
     )
 
 
@@ -1088,7 +1078,7 @@ def solve(
             )
             report = solve(
                 assignment_state,
-                requested=max(2, requested),
+                requested=requested,
                 time_limit_seconds=per_assignment,
                 max_solution_cubes=max_solution_cubes,
                 max_restriction_cubes=max_restriction_cubes,
@@ -1098,13 +1088,15 @@ def solve(
             if not report.search_complete:
                 timed_out = True
         groups = _ordered_groups(answers, requested)
-        returned = sum(len(group.answers) for group in groups)
+        returned = len(groups)
         if timed_out:
             warnings.append(
                 f"Blank Card Wild search shared the {time_limit_seconds:g}-second limit across 16 color assignments."
             )
         if returned >= requested:
-            warnings.append("Stopped displaying at the requested Solution count; ask for more to continue exploring.")
+            warnings.append(
+                "Stopped displaying at the requested unique card-set count; ask for more to continue exploring."
+            )
         return SolverReport(
             groups=groups,
             requested=requested,
@@ -1166,8 +1158,8 @@ def solve(
             )
 
         # Mandatory Restrictions are always searched. Optional Restrictions are
-        # searched when needed to fill the requested result count.
-        if mandatory_restriction or len(answers) < requested:
+        # searched when needed to fill the requested distinct card-set count.
+        if mandatory_restriction or _distinct_card_set_count(answers) < requested:
             restrictions, simple_restrictions = _restriction_candidates(
                 state,
                 deadline,
@@ -1222,12 +1214,12 @@ def solve(
                         cube_use_cache=cube_use_cache,
                     )
                 )
-                if len(answers) >= requested:
+                if _distinct_card_set_count(answers) >= requested:
                     break
 
             # If the fast canonical chain shape did not fill the request, use
             # the broader side/chain catalog with the remaining time budget.
-            if len(answers) < requested:
+            if _distinct_card_set_count(answers) < requested:
                 fallback_restrictions, fallback_simple = _restriction_candidates(
                     state,
                     deadline,
@@ -1283,7 +1275,7 @@ def solve(
                             cube_use_cache=cube_use_cache,
                         )
                     )
-                    if len(answers) >= requested:
+                    if _distinct_card_set_count(answers) >= requested:
                         break
 
             # Independent statements are deliberately a reserve strategy. They
@@ -1321,9 +1313,11 @@ def solve(
         )
 
     groups = _ordered_groups(answers, requested)
-    returned = sum(len(group.answers) for group in groups)
+    returned = len(groups)
     if returned >= requested:
-        warnings.append("Stopped displaying at the requested Solution count; ask for more to continue exploring.")
+        warnings.append(
+            "Stopped displaying at the requested unique card-set count; ask for more to continue exploring."
+        )
     elif state.situation is Situation.IMPOSSIBLE and not answers:
         warnings.append("Nothing was found.")
     elapsed = monotonic() - started

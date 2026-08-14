@@ -119,7 +119,8 @@ Review refinements:
 Deliberately outside this release:
 
 - Official Two Solutions is not exposed. Normal solver output is grouped by
-  physical card set and promotes different sets first.
+  physical card set, and its requested count means distinct card sets rather
+  than alternate written expressions within a set.
 - Absolute Value remains deferred while the product accepts one numeric Goal.
 - Shift from Permitted and other move/scoring variations are outside the
   checker/solver product boundary.

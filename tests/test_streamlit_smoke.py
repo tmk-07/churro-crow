@@ -97,8 +97,8 @@ class StreamlitSmokeTests(unittest.TestCase):
 
         self.assertEqual(list(app.exception), [])
         metrics = {item.label: item.value for item in app.metric}
-        self.assertGreater(int(metrics["Solutions"]), 0)
-        self.assertGreater(int(metrics["Different card sets"]), 0)
+        self.assertGreater(int(metrics["Unique solutions"]), 0)
+        self.assertGreater(int(metrics["Written variations"]), 0)
         for expression in (item.value for item in app.code):
             if "⊂" not in expression and "=" not in expression:
                 self.assertTrue(expression.startswith("(") or expression.endswith("'"))

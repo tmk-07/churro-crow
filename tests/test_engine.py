@@ -613,6 +613,7 @@ class SolverTests(unittest.TestCase):
         report = solve(self.state("BGRu-"), requested=3)
         self.assertEqual(report.returned, 3)
         self.assertEqual(len(report.groups), 3)
+        self.assertEqual(len({group.cards for group in report.groups}), 3)
 
     def test_output_order_is_deterministic(self):
         state = self.state("BGRu-", goal=6)
@@ -719,8 +720,10 @@ class SolverTests(unittest.TestCase):
             max_restriction_cubes=6,
         )
         answers = [answer for group in report.groups for answer in group.answers]
-        self.assertEqual(len(answers), 1)
-        self.assertIn(";", answers[0].restriction)
+        self.assertEqual(report.returned, 1)
+        self.assertEqual(len(report.groups), 1)
+        self.assertGreater(len(answers), 1)
+        self.assertTrue(all(";" in answer.restriction for answer in answers))
 
     def test_impossible_no_result_message_is_plain(self):
         report = solve(

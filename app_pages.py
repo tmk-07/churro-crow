@@ -233,7 +233,15 @@ def solve_page() -> None:
 
     controls = st.columns(3)
     with controls[0]:
-        requested = int(st.number_input("Solutions wanted", min_value=1, max_value=100, value=5, step=1, key="solve_requested"))
+        requested = int(st.number_input(
+            "Unique card-set solutions wanted",
+            min_value=1,
+            max_value=100,
+            value=5,
+            step=1,
+            key="solve_requested",
+            help="Alternate expressions for the same physical card set do not count toward this number.",
+        ))
     with controls[1]:
         time_limit = float(st.number_input("Interactive search limit (seconds)", min_value=1.0, max_value=60.0, value=5.0, step=1.0, key="solve_time_limit"))
     with controls[2]:
@@ -277,8 +285,11 @@ def solve_page() -> None:
     for warning in report.warnings:
         st.info(warning)
     result_cols = st.columns(3)
-    result_cols[0].metric("Solutions", report.returned)
-    result_cols[1].metric("Different card sets", len(report.groups))
+    result_cols[0].metric("Unique solutions", report.returned)
+    result_cols[1].metric(
+        "Written variations",
+        sum(len(group.answers) for group in report.groups),
+    )
     result_cols[2].metric("Search time", f"{report.elapsed_seconds:.2f}s")
     if not report.groups:
         if "Nothing was found." not in report.warnings:
@@ -315,7 +326,7 @@ def solve_page() -> None:
         st.session_state.pop("solve_report", None)
         st.session_state["solve_auto_run"] = True
 
-    st.button("Find 5 more", key="solve_more", on_click=request_more)
+    st.button("Find 5 more unique solutions", key="solve_more", on_click=request_more)
 
 
 def practice_page() -> None:
