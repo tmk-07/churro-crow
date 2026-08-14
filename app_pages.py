@@ -16,7 +16,14 @@ from onsets_engine import (
     validate_game_state,
 )
 from onsets_engine.notation import display_cube_inventory
-from ui_shared import cards_text, cube_trays, division_selector, universe_selector, variation_controls
+from ui_shared import (
+    cards_text,
+    checker_universe_selector,
+    cube_trays,
+    division_selector,
+    universe_selector,
+    variation_controls,
+)
 from z_leaderboard import _top_scores, MODES
 
 
@@ -67,7 +74,7 @@ def check_page() -> None:
     with top[0]:
         division = division_selector(key="check")
     with top[1]:
-        card_ids = universe_selector(division, key="check")
+        card_ids = checker_universe_selector(division, key="check")
 
     universe, variations, variation_issues = variation_controls(
         division,
@@ -126,24 +133,54 @@ def check_page() -> None:
         if not answers:
             st.error("No legal interpretation satisfies the active restrictions and variations.")
             return
-        st.caption(f"{len(answers)} legal interpretation{'s' if len(answers) != 1 else ''}")
-        for index, answer in enumerate(answers, 1):
-            with st.container(border=True):
-                st.subheader(f"Interpretation {index}")
-                if answer.restriction:
-                    st.write("Restriction")
-                    st.code(answer.restriction)
-                    st.caption(f"Restricted Universe: {cards_text(answer.restricted_universe)}")
-                st.code(answer.solution.expression)
-                value_col, card_col = st.columns([1, 4])
-                value_col.metric("Value", answer.solution.value)
-                card_col.write("Physical cards")
-                card_col.write(cards_text(answer.solution.cards))
-                for violation in answer.violations:
-                    st.warning(violation)
-                with st.expander("Evaluation steps"):
-                    for step in answer.solution.steps:
-                        st.write(f"`{step.expression}` — {step.explanation} {cards_text(step.cards)}")
+        sorted_answers = sorted(
+            answers,
+            key=lambda answer: (
+                answer.solution.value,
+                answer.solution.expression,
+                answer.restriction or "",
+            ),
+        )
+        answers_by_value = {
+            value: tuple(
+                answer
+                for answer in sorted_answers
+                if answer.solution.value == value
+            )
+            for value in sorted({answer.solution.value for answer in sorted_answers})
+        }
+        st.caption(f"{len(sorted_answers)} legal interpretation{'s' if len(sorted_answers) != 1 else ''}")
+        st.write("Choose a value to view its interpretations:")
+        value_tabs = st.tabs(
+            [
+                f"Value {value} · {len(value_answers)}"
+                for value, value_answers in answers_by_value.items()
+            ]
+        )
+        interpretation_index = 0
+        for tab, (value, value_answers) in zip(value_tabs, answers_by_value.items()):
+            with tab:
+                st.caption(
+                    f"{len(value_answers)} interpretation{'s' if len(value_answers) != 1 else ''} equal {value}"
+                )
+                for answer in value_answers:
+                    interpretation_index += 1
+                    with st.container(border=True):
+                        st.subheader(f"Interpretation {interpretation_index}")
+                        if answer.restriction:
+                            st.write("Restriction")
+                            st.code(answer.restriction)
+                            st.caption(f"Restricted Universe: {cards_text(answer.restricted_universe)}")
+                        st.code(answer.solution.expression)
+                        value_col, card_col = st.columns([1, 4])
+                        value_col.metric("Value", answer.solution.value)
+                        card_col.write("Physical cards")
+                        card_col.write(cards_text(answer.solution.cards))
+                        for violation in answer.violations:
+                            st.warning(violation)
+                        with st.expander("Evaluation steps"):
+                            for step in answer.solution.steps:
+                                st.write(f"`{step.expression}` — {step.explanation} {cards_text(step.cards)}")
 
 
 def _situation_selector() -> Situation:

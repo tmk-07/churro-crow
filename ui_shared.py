@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Mapping
 
 import streamlit as st
@@ -87,6 +88,43 @@ def universe_selector(division: Division, *, key: str) -> tuple[str, ...]:
     if not selected:
         st.error("Select at least one physical card.")
     return tuple(selected)
+
+
+def checker_universe_selector(division: Division, *, key: str) -> tuple[str, ...]:
+    """Compact 4×4 physical-card picker matching the On-Sets chart."""
+
+    state_key = f"{key}_card_states"
+    if state_key not in st.session_state:
+        st.session_state[state_key] = {card_id: True for card_id in CARD_ORDER}
+    states = st.session_state[state_key]
+    for card_id in CARD_ORDER:
+        states.setdefault(card_id, True)
+
+    st.subheader("Universe cards")
+    st.caption("Click a card label to include or exclude that physical card.")
+    columns = st.columns(4, gap="small")
+    asset_root = Path(__file__).resolve().parent / "Onsets Cards"
+    for index, card_id in enumerate(CARD_ORDER):
+        with columns[index % 4]:
+            st.image(str(asset_root / f"{card_id}.png"), width=92)
+            included = bool(states[card_id])
+            if st.button(
+                f"{'✓' if included else '○'} {card_id}",
+                key=f"{key}_card_toggle_{card_id}",
+                type="primary" if included else "secondary",
+                use_container_width=True,
+            ):
+                states[card_id] = not included
+                st.rerun()
+
+    selected = tuple(card_id for card_id in CARD_ORDER if states[card_id])
+    st.caption(f"{len(selected)} of 16 cards selected")
+    warning = universe_size_warning(division, len(selected))
+    if warning:
+        st.warning(warning)
+    if not selected:
+        st.error("Select at least one physical card.")
+    return selected
 
 
 def cube_trays(*, key: str) -> tuple[CubeInventory, CubeInventory, CubeInventory, CubeInventory]:

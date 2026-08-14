@@ -107,9 +107,16 @@ def validate_variations(
     if (
         validate_cube_availability
         and config.enabled(Variation.NO_NULL)
-        and not ({"c", "="} & set(resources_symbols))
     ):
-        issues.append(VariationIssue("No Null Restrictions cannot affect this shake because Resources contains no ⊂ or = cube."))
+        current_symbols = set(resources_symbols)
+        if cube_sections is not None:
+            current_symbols.update(
+                symbol
+                for inventory in cube_sections.values()
+                for symbol in inventory.symbols
+            )
+        if not ({"c", "="} & current_symbols):
+            issues.append(VariationIssue("No Null Restrictions cannot affect this shake because the current cube state contains no ⊂ or = cube."))
     if validate_cube_availability and config.enabled(Variation.WILD_CUBE):
         if not config.wild_cube:
             issues.append(VariationIssue("Choose which physical cube is wild."))

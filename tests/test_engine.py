@@ -294,6 +294,21 @@ class VariationTests(unittest.TestCase):
         issues = validate_variations(Division.MIDDLE, self.universe, config)
         self.assertTrue(any("not normally available" in issue.message.lower() for issue in issues))
 
+    def test_no_null_accepts_restriction_cube_outside_resources(self):
+        config = VariationConfig(active=frozenset({Variation.NO_NULL}))
+        issues = validate_variations(
+            Division.MIDDLE,
+            self.universe,
+            config,
+            cube_sections={
+                "required": CubeInventory.parse("c"),
+                "permitted": CubeInventory(),
+                "forbidden": CubeInventory(),
+                "resources": CubeInventory(),
+            },
+        )
+        self.assertFalse(any("No Null" in issue.message for issue in issues))
+
     def test_required_and_forbidden_cards_apply_to_physical_result(self):
         config = VariationConfig(
             active=frozenset({Variation.REQUIRED_FORBIDDEN_CARD}),

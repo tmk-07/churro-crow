@@ -50,6 +50,7 @@ class StreamlitSmokeTests(unittest.TestCase):
         self.assertIn("((B U G) − R)", expressions)
         self.assertIn("(B U (G − R))", expressions)
         self.assertEqual(values, {"6", "10"})
+        self.assertEqual([tab.label for tab in app.tabs], ["Value 6 · 1", "Value 10 · 1"])
 
     def test_checker_hides_game_state_only_controls(self):
         app = self._page("pages/check.py")
@@ -78,7 +79,11 @@ class StreamlitSmokeTests(unittest.TestCase):
 
         self.assertEqual(list(app.exception), [])
         values = [item.value for item in app.metric if item.label == "Value"]
-        self.assertEqual(values, ["1", "2", "0", "2", "1"])
+        self.assertEqual(values, ["0", "1", "1", "2", "2"])
+        self.assertEqual(
+            [tab.label for tab in app.tabs],
+            ["Value 0 · 1", "Value 1 · 2", "Value 2 · 2"],
+        )
         headings = [item.value for item in app.subheader]
         self.assertIn("Interpretation 5", headings)
 

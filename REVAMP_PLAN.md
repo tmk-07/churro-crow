@@ -162,6 +162,9 @@ Core UI work:
   cube-identity-only variation controls.
 - [x] Add the reported chained-Restriction/five-interpretation case as a UI
   regression test.
+- [ ] Add an empirical solve-time estimate using cube count plus the active
+  Restriction and variation search multipliers; do not present cube count alone
+  as a precise prediction.
 
 Completion criteria:
 
