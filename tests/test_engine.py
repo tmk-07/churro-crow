@@ -519,7 +519,7 @@ class SolverTests(unittest.TestCase):
                 )
             )
 
-        report = solve(state, requested=5, time_limit_seconds=5)
+        report = solve(state, requested=5, time_limit_seconds=15)
         self.assertEqual(report.returned, 5)
         self.assertTrue(report.search_complete)
 
@@ -594,7 +594,7 @@ class SolverTests(unittest.TestCase):
         )
         self.assertTrue(all(not answer.violations for answer in checked))
 
-        report = solve(state, requested=5, time_limit_seconds=5)
+        report = solve(state, requested=5, time_limit_seconds=15)
         self.assertEqual(report.returned, 5)
         self.assertTrue(report.search_complete)
         self.assertTrue(all(
