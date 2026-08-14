@@ -1,0 +1,10 @@
+.git
+.github
+.pytest_cache
+.streamlit
+.venv
+__pycache__
+*.pyc
+web/node_modules
+web/dist
+.phase0-backup-*

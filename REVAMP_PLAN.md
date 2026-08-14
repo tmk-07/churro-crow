@@ -6,9 +6,10 @@ This is the living roadmap for rebuilding Churro Crow into an approachable On-Se
 
 - Audience: anyone learning or practicing On-Sets.
 - Runtime solving must be deterministic code, not AI-dependent.
-- Keep Python and Streamlit for the initial revamp.
-- Reconsider a Next.js frontend with a FastAPI backend only after a polished Streamlit release demonstrates a concrete UI limitation.
-- Keep the leaderboard public and lightweight.
+- Preserve the tested Python rules engine behind a versioned FastAPI boundary.
+- Replace Streamlit with a React/Vite interface hosted at
+  `onsets.tkimify.com`; keep Streamlit as the fallback until migration parity.
+- Keep the leaderboard public, lightweight, and read-only during migration.
 
 ## Agreed rule contract
 
@@ -197,14 +198,17 @@ Completion criteria:
 
 Goal: choose the long-term interface and hosting stack using evidence from the rebuilt product.
 
-- [ ] Deploy and evaluate the polished Streamlit release.
-- [ ] Test mobile usability, interaction quality, performance, and maintainability.
-- [ ] Document any concrete limitations that cannot be solved cleanly with Streamlit.
-- [ ] Stay with Streamlit if it meets the product needs.
-- [ ] If necessary, retain the Python engine behind FastAPI and rebuild only the frontend in Next.js.
+- [x] Deploy and evaluate the polished Streamlit release.
+- [x] Identify the server-driven reruns and layout limits blocking the desired UI.
+- [x] Retain the Python engine behind FastAPI and rebuild only the frontend in
+  React/Vite with regular CSS.
+- [x] Preserve a read-only snapshot of all three leaderboard modes.
+- [x] Prepare Cloudflare Workers Static Assets for `onsets.tkimify.com`.
+- [x] Prepare a standalone Python API container.
+- [ ] Enable a billed compute host and deploy the API.
+- [ ] Point `api.onsets.tkimify.com` at that API before switching users away
+  from Streamlit.
 - [ ] Add production monitoring, deployment checks, and rollback instructions for the chosen stack.
-
-Do not split into separate frontend and backend deployments until Streamlit has demonstrated a specific blocking limitation.
 
 ## First revamped release
 
@@ -221,4 +225,6 @@ The first major release should contain:
 
 ## Current next step
 
-Review the local Phase 1–4 build. Do not deploy or begin Phase 5 until the review decisions are incorporated.
+Review the React/FastAPI migration build locally. The Cloudflare frontend can be
+published independently, but calculation traffic must remain on Streamlit until
+the Python API has a billed compute host.

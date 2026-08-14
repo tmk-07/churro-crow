@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "onsets-tkimify",
+  "compatibility_date": "2026-08-14",
+  "main": "./worker/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "routes": [
+    {
+      "pattern": "onsets.tkimify.com",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "API_ORIGIN": "https://api.onsets.tkimify.com"
+  }
+}
