@@ -1,22 +1,8 @@
 import streamlit as st
-from PIL import Image
-from churrooscalc import double_set, set_cards, parseR, quick_solutions, calc_full_solution, validate_inputs, cards, universeRefresher, gen_full_solution
-import os
-import base64
-from io import BytesIO
-import uuid
-import random
-import time
-from datetime import datetime, timedelta
 from z_padding_function import padding_practice
 from z_calc_function import calc_function
-# from z_driller import driller
 from z_check_function import check_function
 from z_leaderboard import leaderboard_page
-import streamlit as st
-from pathlib import Path
-import toml
-from pathlib import Path
 from ztesttimer import ztesttimer
 
 def start_screen():
@@ -77,8 +63,6 @@ elif st.session_state.page == "check_function":
     check_function()
 elif st.session_state.page == "padding_practice":
     padding_practice()
-elif st.session_state.page == "driller":
-    driller()
 elif st.session_state.page == "leaderboard":
     leaderboard_page()
 elif st.session_state.page == "ztesttimer":

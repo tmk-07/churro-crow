@@ -1,0 +1,27 @@
+# Local credentials
+.streamlit/secrets.toml
+.env
+.env.*
+!.env.example
+
+# Phase 0 recovery material contains the retired Git history and old key.
+.phase0-backup-*/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+
+# Logs and local output
+*.log
+dist/
+build/
