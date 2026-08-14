@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from unittest.mock import patch
 from time import monotonic
 
@@ -526,7 +527,9 @@ class SolverTests(unittest.TestCase):
         universe = Universe.from_ids(
             card_id
             for card_id in Universe.full().ids
-            if card_id not in {"BR", "BRY", "BY", "BG", "RG", "RGY", "GY"}
+            if card_id not in {
+                "BR", "BRY", "BY", "BRGY", "BG", "RG", "RGY", "GY"
+            }
         )
         variations = VariationConfig(
             active=AUTOMATIC_VARIATIONS[Division.SENIOR]
@@ -551,11 +554,32 @@ class SolverTests(unittest.TestCase):
         )
         restriction_text = "R = R = R c B u (G n Y - (R-R))"
         solution_text = "B u G u ((R-R)-Y)"
+        face_state = replace(
+            state,
+            variations=replace(variations, wild_as="-"),
+        )
 
-        # With the supplied Universe, BRGY is present and is named by B U G.
-        # The supplied example expression therefore has value 5, not 4. The
-        # solver must preserve that card while still finding other goal-4
-        # Solutions for the shake.
+        restriction_sets = enumerate_restriction_sets(restriction_text)
+        for restrictions in restriction_sets:
+            self.assertTrue(
+                no_null_satisfied_for_every_order(restrictions, universe, variations)
+            )
+            restriction_use = match_cube_use(
+                restrictions[0].written_symbols(),
+                face_state,
+                face_state.required,
+            )
+            self.assertIsNotNone(restriction_use)
+            self.assertEqual(restriction_use.wild_cube_as, "-")
+        for expression in parse_interpretations(solution_text):
+            solution_use = match_cube_use(
+                expression.written_symbols(),
+                face_state,
+                face_state.required.without({"c", "="}),
+            )
+            self.assertIsNotNone(solution_use)
+            self.assertEqual(solution_use.wild_cube_as, "-")
+
         checked = check_expression(
             universe,
             solution_text,
@@ -563,8 +587,12 @@ class SolverTests(unittest.TestCase):
             variations=variations,
         )
         self.assertTrue(checked)
-        self.assertEqual({answer.solution.value for answer in checked}, {5})
-        self.assertTrue(all("BRGY" in answer.solution.cards for answer in checked))
+        self.assertEqual({answer.solution.value for answer in checked}, {4})
+        self.assertEqual(
+            {answer.solution.cards for answer in checked},
+            {("B", "BRG", "BGY", "G")},
+        )
+        self.assertTrue(all(not answer.violations for answer in checked))
 
         report = solve(state, requested=5, time_limit_seconds=5)
         self.assertEqual(report.returned, 5)
