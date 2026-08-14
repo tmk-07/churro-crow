@@ -158,6 +158,10 @@ Core UI work:
 - [x] Keep all controls visible for this review build; defer density/mode decisions.
 - [x] Use responsive native Streamlit layout, keyboard-friendly controls, contrast, and explicit error states.
 - [x] Confirm native controls are sufficient for this review build; no custom component added.
+- [x] Keep the Checker focused on expressions by removing Goal, shake-cube, and
+  cube-identity-only variation controls.
+- [x] Add the reported chained-Restriction/five-interpretation case as a UI
+  regression test.
 
 Completion criteria:
 

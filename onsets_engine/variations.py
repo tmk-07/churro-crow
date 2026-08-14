@@ -97,15 +97,20 @@ def validate_variations(
     *,
     resources_symbols: tuple[str, ...] = (),
     cube_sections: Mapping[str, CubeInventory] | None = None,
+    validate_cube_availability: bool = True,
 ) -> tuple[VariationIssue, ...]:
     issues: list[VariationIssue] = []
     unavailable = config.active - AVAILABLE_VARIATIONS[division] - AUTOMATIC_VARIATIONS[division]
     if unavailable:
         names = ", ".join(sorted(item.value.replace("_", " ").title() for item in unavailable))
         issues.append(VariationIssue(f"Not normally available in {division.value.title()}: {names}."))
-    if config.enabled(Variation.NO_NULL) and not ({"c", "="} & set(resources_symbols)):
+    if (
+        validate_cube_availability
+        and config.enabled(Variation.NO_NULL)
+        and not ({"c", "="} & set(resources_symbols))
+    ):
         issues.append(VariationIssue("No Null Restrictions cannot affect this shake because Resources contains no ⊂ or = cube."))
-    if config.enabled(Variation.WILD_CUBE):
+    if validate_cube_availability and config.enabled(Variation.WILD_CUBE):
         if not config.wild_cube:
             issues.append(VariationIssue("Choose which physical cube is wild."))
         else:

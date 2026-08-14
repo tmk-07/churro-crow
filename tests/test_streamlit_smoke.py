@@ -51,6 +51,37 @@ class StreamlitSmokeTests(unittest.TestCase):
         self.assertIn("(B U (G − R))", expressions)
         self.assertEqual(values, {"6", "10"})
 
+    def test_checker_hides_game_state_only_controls(self):
+        app = self._page("pages/check.py")
+        labels = {
+            item.label
+            for collection in (app.text_input, app.checkbox)
+            for item in collection
+        }
+        self.assertNotIn("Shake cubes (only needed to declare Wild Cube or No Null)", labels)
+        self.assertNotIn("Goal, optional", labels)
+        self.assertNotIn("Wild Cube", labels)
+        self.assertNotIn("Multiple Operations", labels)
+        self.assertNotIn("U and ∩ Interchangeable", labels)
+        self.assertNotIn("V and Z Interchangeable", labels)
+
+    def test_checker_renders_all_interpretations_for_reported_restriction_case(self):
+        app = self._page("pages/check.py")
+        next(item for item in app.text_area if item.label == "Restriction(s), optional").set_value(
+            "BcGuY=R-G"
+        )
+        next(item for item in app.text_input if item.label == "Set-Name, optional").set_value(
+            "BuG-RuY'"
+        )
+        next(item for item in app.button if item.label == "Check expression").click()
+        app.run(timeout=15)
+
+        self.assertEqual(list(app.exception), [])
+        values = [item.value for item in app.metric if item.label == "Value"]
+        self.assertEqual(values, ["1", "2", "0", "2", "1"])
+        headings = [item.value for item in app.subheader]
+        self.assertIn("Interpretation 5", headings)
+
     def test_solver_generates_grouped_results(self):
         app = self._page("pages/solve.py")
         next(item for item in app.text_input if item.label == "Required").set_value("BGRu-")

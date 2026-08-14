@@ -17,7 +17,6 @@ from onsets_engine import (
     VariationConfig,
     universe_size_warning,
     validate_variations,
-    with_automatic_variations,
 )
 from onsets_engine.notation import display_cube_inventory
 
@@ -125,11 +124,22 @@ def variation_controls(
     *,
     key: str,
     solver_mode: bool = False,
+    expression_only: bool = False,
 ) -> tuple[Universe, VariationConfig, tuple[str, ...]]:
     st.subheader("Variations")
-    st.caption("Automatic division rules are already enabled. Illegal private-practice declarations produce a warning and can be used with Proceed anyway.")
+    if expression_only:
+        st.caption("Only variations that can change the expression's cards, value, or legality are shown.")
+    else:
+        st.caption("Automatic division rules are already enabled. Illegal private-practice declarations produce a warning and can be used with Proceed anyway.")
     available = AVAILABLE_VARIATIONS[division] | AUTOMATIC_VARIATIONS[division]
-    automatic = AUTOMATIC_VARIATIONS[division]
+    if expression_only:
+        available -= {
+            Variation.WILD_CUBE,
+            Variation.MULTIPLE_OPERATIONS,
+            Variation.UNION_INTERSECTION_INTERCHANGEABLE,
+            Variation.UNIVERSE_NULL_INTERCHANGEABLE,
+        }
+    automatic = AUTOMATIC_VARIATIONS[division] & available
     selected: set[Variation] = set()
     columns = st.columns(3)
     ordered = tuple(VARIATION_LABELS)
@@ -145,7 +155,7 @@ def variation_controls(
             )
             if enabled:
                 selected.add(variation)
-    selected = set(with_automatic_variations(division, frozenset(selected)))
+    selected.update(automatic)
 
     wild_cube = None
     wild_cube_section = None
@@ -257,6 +267,7 @@ def variation_controls(
         universe,
         config,
         cube_sections=cube_sections,
+        validate_cube_availability=not expression_only,
     )
     return universe, config, tuple(issue.message for issue in issues)
 

@@ -69,20 +69,12 @@ def check_page() -> None:
     with top[1]:
         card_ids = universe_selector(division, key="check")
 
-    # The checker has no game-state cube validation, but the shake-cube input
-    # lets Wild Cube and No Null declarations be checked for effect.
-    resources_text = st.text_input(
-        "Shake cubes (only needed to declare Wild Cube or No Null)",
-        key="check_resources",
-        placeholder="Example: BGu'",
-    )
-    try:
-        resources = CubeInventory.parse(resources_text)
-    except ValueError as exc:
-        st.error(str(exc))
-        resources = CubeInventory()
     universe, variations, variation_issues = variation_controls(
-        division, card_ids, {"shake": resources}, key="check"
+        division,
+        card_ids,
+        {},
+        key="check",
+        expression_only=True,
     )
     for issue in variation_issues:
         st.warning(issue)
@@ -101,11 +93,6 @@ def check_page() -> None:
             placeholder="Example: B U G − R",
             key="check_solution",
         )
-        goal_text = st.text_input(
-            "Goal, optional",
-            placeholder="Example: 6",
-            key="check_goal",
-        )
 
     if st.button("Check expression", type="primary", use_container_width=True, key="check_run"):
         if not proceed:
@@ -115,9 +102,6 @@ def check_page() -> None:
             st.error("Enter a Restriction, a Set-Name, or both.")
             return
         try:
-            goal = int(goal_text) if goal_text.strip() else None
-            if goal is not None and goal < 0:
-                raise ValueError("Goal cannot be negative.")
             if restriction.strip() and not solution.strip():
                 combinations = enumerate_restriction_sets(restriction)
                 for index, restrictions in enumerate(combinations, 1):
@@ -142,12 +126,6 @@ def check_page() -> None:
         if not answers:
             st.error("No legal interpretation satisfies the active restrictions and variations.")
             return
-        values = {answer.solution.value for answer in answers}
-        if goal is not None:
-            if values == {goal} and not any(answer.violations for answer in answers):
-                st.success(f"Every legal interpretation equals the Goal of {goal}.")
-            else:
-                st.error(f"This is not tournament-valid for Goal {goal}; at least one interpretation has a wrong value or violates an active variation.")
         st.caption(f"{len(answers)} legal interpretation{'s' if len(answers) != 1 else ''}")
         for index, answer in enumerate(answers, 1):
             with st.container(border=True):
@@ -155,13 +133,6 @@ def check_page() -> None:
                 if answer.restriction:
                     st.write("Restriction")
                     st.code(answer.restriction)
-                    if answer.restriction_cube_use:
-                        st.caption(
-                            "Restriction cubes — written: "
-                            f"{display_cube_inventory(answer.restriction_cube_use.written.items)}; "
-                            "physical: "
-                            f"{display_cube_inventory(answer.restriction_cube_use.physical.items)}"
-                        )
                     st.caption(f"Restricted Universe: {cards_text(answer.restricted_universe)}")
                 st.code(answer.solution.expression)
                 value_col, card_col = st.columns([1, 4])
@@ -170,10 +141,6 @@ def check_page() -> None:
                 card_col.write(cards_text(answer.solution.cards))
                 for violation in answer.violations:
                     st.warning(violation)
-                if goal is not None:
-                    (st.success if answer.solution.value == goal else st.warning)(
-                        f"This interpretation {'equals' if answer.solution.value == goal else 'does not equal'} {goal}."
-                    )
                 with st.expander("Evaluation steps"):
                     for step in answer.solution.steps:
                         st.write(f"`{step.expression}` — {step.explanation} {cards_text(step.cards)}")
