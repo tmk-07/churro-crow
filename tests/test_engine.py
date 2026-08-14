@@ -3,6 +3,7 @@ from unittest.mock import patch
 from time import monotonic
 
 from onsets_engine import (
+    AUTOMATIC_VARIATIONS,
     CubeInventory,
     CubeUse,
     Division,
@@ -14,6 +15,7 @@ from onsets_engine import (
     apply_restrictions,
     check_expression,
     combined_resource_use_is_legal,
+    evaluate,
     enumerate_evaluations,
     enumerate_restriction_sets,
     match_cube_use,
@@ -429,6 +431,30 @@ class SolverTests(unittest.TestCase):
         invalid = self.state("BBBBBBBBB", goal=1)
         errors, _ = validate_game_state(invalid)
         self.assertTrue(any("8" in error and "color cubes" in error for error in errors))
+
+    def test_senior_impossible_search_reaches_required_operation_depth(self):
+        universe = Universe.from_ids(("B", "BRG", "BGY", "G", "R", "RY", "Y", "blank"))
+        variations = VariationConfig(active=AUTOMATIC_VARIATIONS[Division.SENIOR])
+        state = GameState(
+            universe=universe,
+            goal=5,
+            division=Division.SENIOR,
+            situation=Situation.IMPOSSIBLE,
+            required=CubeInventory.parse("--nu"),
+            resources=CubeInventory.parse("rrggbbyy"),
+            variations=variations,
+        )
+
+        found_expression = parse_interpretations("(GuY)u((B-B)-R)")[0]
+        cards, _ = evaluate(found_expression, universe, variations)
+        self.assertEqual(cards, frozenset({"BRG", "BGY", "G", "RY", "Y"}))
+        self.assertIsNotNone(
+            match_cube_use(found_expression.written_symbols(), state, state.required)
+        )
+
+        report = solve(state, requested=5, time_limit_seconds=5)
+        self.assertGreater(report.returned, 0)
+        self.assertFalse(any(warning == "Nothing was found." for warning in report.warnings))
 
     def test_distinct_physical_card_sets_are_promoted_first(self):
         report = solve(self.state("BGRu-"), requested=3)

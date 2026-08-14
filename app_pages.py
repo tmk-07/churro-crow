@@ -18,10 +18,9 @@ from onsets_engine import (
 from onsets_engine.notation import display_cube_inventory
 from ui_shared import (
     cards_text,
-    checker_universe_selector,
+    card_grid_selector,
     cube_trays,
     division_selector,
-    universe_selector,
     variation_controls,
 )
 from z_leaderboard import _top_scores, MODES
@@ -74,7 +73,7 @@ def check_page() -> None:
     with top[0]:
         division = division_selector(key="check")
     with top[1]:
-        card_ids = checker_universe_selector(division, key="check")
+        card_ids = card_grid_selector(division, key="check")
 
     universe, variations, variation_issues = variation_controls(
         division,
@@ -209,7 +208,7 @@ def solve_page() -> None:
     with settings[2]:
         goal = st.number_input("Numeric Goal", min_value=0, step=1, value=6, key="solve_goal")
 
-    card_ids = universe_selector(division, key="solve")
+    card_ids = card_grid_selector(division, key="solve")
     try:
         required, permitted, forbidden, resources = cube_trays(key="solve")
     except ValueError as exc:

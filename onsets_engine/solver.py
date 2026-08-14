@@ -553,7 +553,7 @@ def _answers_for_universe(
     restriction: _RestrictionCandidate | None = None,
 ) -> list[SolverAnswer]:
     answers: list[SolverAnswer] = []
-    catalog = _catalog(active_universe, state, max_cost, deadline, per_key=2)
+    catalog = _catalog(active_universe, state, max_cost, deadline, per_key=1)
     for level in catalog[1:]:
         for candidate in level:
             if monotonic() > deadline:
@@ -796,8 +796,19 @@ def solve(
 
     available, _ = _inventory_for_situation(state)
     if max_solution_cubes is None:
-        baseline = _required_for_set_name(state, has_restriction=False).total
-        max_solution_cubes = min(10, max(6, baseline + 4))
+        required_set_name = _required_for_set_name(state, has_restriction=False)
+        baseline = required_set_name.total
+        required_binary_operations = sum(
+            required_set_name.count(symbol) for symbol in ("u", "n", "-")
+        )
+        required_atoms = sum(
+            required_set_name.count(symbol) for symbol in SET_SYMBOLS
+        )
+        minimum_well_formed = baseline + max(
+            0,
+            required_binary_operations + 1 - required_atoms,
+        )
+        max_solution_cubes = min(10, max(6, baseline + 4, minimum_well_formed))
     if max_restriction_cubes is None:
         max_restriction_cubes = min(9, max(5, state.required.total + 3))
 

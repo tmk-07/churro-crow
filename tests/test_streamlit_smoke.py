@@ -89,6 +89,8 @@ class StreamlitSmokeTests(unittest.TestCase):
 
     def test_solver_generates_grouped_results(self):
         app = self._page("pages/solve.py")
+        card_buttons = {item.label for item in app.button}
+        self.assertTrue({"✓ BR", "✓ BRGY", "✓ blank"} <= card_buttons)
         next(item for item in app.text_input if item.label == "Required").set_value("BGRu-")
         next(item for item in app.button if item.label == "Generate Solutions").click()
         app.run(timeout=15)

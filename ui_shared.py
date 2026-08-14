@@ -74,23 +74,7 @@ def division_selector(*, key: str) -> Division:
     return selected
 
 
-def universe_selector(division: Division, *, key: str) -> tuple[str, ...]:
-    selected = st.multiselect(
-        "Universe cards",
-        CARD_ORDER,
-        default=CARD_ORDER,
-        key=f"{key}_universe",
-        help="Each label identifies one physical On-Sets card. The blank card has no dots unless Blank Card Wild is active.",
-    )
-    warning = universe_size_warning(division, len(selected))
-    if warning:
-        st.warning(warning)
-    if not selected:
-        st.error("Select at least one physical card.")
-    return tuple(selected)
-
-
-def checker_universe_selector(division: Division, *, key: str) -> tuple[str, ...]:
+def card_grid_selector(division: Division, *, key: str) -> tuple[str, ...]:
     """Compact 4×4 physical-card picker matching the On-Sets chart."""
 
     state_key = f"{key}_card_states"
