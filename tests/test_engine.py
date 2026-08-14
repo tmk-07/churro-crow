@@ -456,6 +456,131 @@ class SolverTests(unittest.TestCase):
         self.assertGreater(report.returned, 0)
         self.assertFalse(any(warning == "Nothing was found." for warning in report.warnings))
 
+    def test_golden_problem_one_long_chain_no_null_and_double_set(self):
+        universe = Universe.from_ids(
+            card_id
+            for card_id in Universe.full().ids
+            if card_id not in {"BR", "BRY", "BGY", "BG", "RG", "RY"}
+        )
+        variations = VariationConfig(
+            active=AUTOMATIC_VARIATIONS[Division.SENIOR]
+            | frozenset({
+                Variation.NO_NULL,
+                Variation.DOUBLE_SET,
+                Variation.REQUIRED_FORBIDDEN_CARD,
+            }),
+            double_set_expression="B u (R')",
+            forbidden_card="GY",
+        )
+        state = GameState(
+            universe=universe,
+            goal=7,
+            division=Division.SENIOR,
+            situation=Situation.IMPOSSIBLE,
+            required=CubeInventory.parse("=cVuun'"),
+            permitted=CubeInventory.parse("yyyrrrgb"),
+            variations=variations,
+        )
+        restriction_text = "Z = Y c R n B n (G') n R"
+        solution_text = "(R u G u B) u (Z n (Y'))"
+
+        restriction_sets = enumerate_restriction_sets(restriction_text)
+        for restrictions in restriction_sets:
+            self.assertTrue(
+                no_null_satisfied_for_every_order(restrictions, universe, variations)
+            )
+            self.assertIsNotNone(
+                match_cube_use(
+                    restrictions[0].written_symbols(),
+                    state,
+                    state.required,
+                )
+            )
+        checked = check_expression(
+            universe,
+            solution_text,
+            restriction_text=restriction_text,
+            variations=variations,
+        )
+        self.assertTrue(checked)
+        self.assertEqual({answer.solution.value for answer in checked}, {7})
+        self.assertEqual(
+            {answer.solution.cards for answer in checked},
+            {("B", "BRG", "G", "R")},
+        )
+        self.assertTrue(all(not answer.violations for answer in checked))
+        for expression in parse_interpretations(solution_text):
+            self.assertIsNotNone(
+                match_cube_use(
+                    expression.written_symbols(),
+                    state,
+                    state.required.without({"c", "="}),
+                )
+            )
+
+        report = solve(state, requested=5, time_limit_seconds=5)
+        self.assertEqual(report.returned, 5)
+        self.assertTrue(report.search_complete)
+
+    def test_golden_problem_two_long_chain_and_wild_face_search(self):
+        universe = Universe.from_ids(
+            card_id
+            for card_id in Universe.full().ids
+            if card_id not in {"BR", "BRY", "BY", "BG", "RG", "RGY", "GY"}
+        )
+        variations = VariationConfig(
+            active=AUTOMATIC_VARIATIONS[Division.SENIOR]
+            | frozenset({
+                Variation.NO_NULL,
+                Variation.WILD_CUBE,
+                Variation.REQUIRED_FORBIDDEN_CARD,
+            }),
+            wild_cube="-",
+            wild_cube_section="required",
+            wild_cube_ordinal=1,
+            forbidden_card="RY",
+        )
+        state = GameState(
+            universe=universe,
+            goal=4,
+            division=Division.SENIOR,
+            situation=Situation.IMPOSSIBLE,
+            required=CubeInventory.parse("==c--un"),
+            permitted=CubeInventory.parse("rrrrrbgy"),
+            variations=variations,
+        )
+        restriction_text = "R = R = R c B u (G n Y - (R-R))"
+        solution_text = "B u G u ((R-R)-Y)"
+
+        # With the supplied Universe, BRGY is present and is named by B U G.
+        # The supplied example expression therefore has value 5, not 4. The
+        # solver must preserve that card while still finding other goal-4
+        # Solutions for the shake.
+        checked = check_expression(
+            universe,
+            solution_text,
+            restriction_text=restriction_text,
+            variations=variations,
+        )
+        self.assertTrue(checked)
+        self.assertEqual({answer.solution.value for answer in checked}, {5})
+        self.assertTrue(all("BRGY" in answer.solution.cards for answer in checked))
+
+        report = solve(state, requested=5, time_limit_seconds=5)
+        self.assertEqual(report.returned, 5)
+        self.assertTrue(report.search_complete)
+        self.assertTrue(all(
+            answer.value == 4 and "RY" not in answer.cards
+            for group in report.groups
+            for answer in group.answers
+        ))
+        self.assertTrue(all(
+            answer.restriction_cube_use is not None
+            and answer.restriction_cube_use.wild_cube_as == "-"
+            for group in report.groups
+            for answer in group.answers
+        ))
+
     def test_distinct_physical_card_sets_are_promoted_first(self):
         report = solve(self.state("BGRu-"), requested=3)
         self.assertEqual(report.returned, 3)

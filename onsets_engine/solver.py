@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from dataclasses import replace
 from itertools import combinations, product
@@ -21,6 +21,7 @@ from .models import (
     SolverReport,
     Universe,
     Variation,
+    VariationConfig,
 )
 from .restrictions import (
     Restriction,
@@ -94,6 +95,26 @@ def _counts(symbols: tuple[str, ...]) -> CubeInventory:
     return CubeInventory.from_mapping(counts)
 
 
+def _minimum_set_name_cost(required: CubeInventory, *, roots: int = 1) -> int:
+    """Smallest well-formed expression containing the required non-relation cubes."""
+
+    binary = sum(required.count(symbol) for symbol in ("u", "n", "-"))
+    unary = required.count("'")
+    atoms = sum(required.count(symbol) for symbol in SET_SYMBOLS)
+    # A forest with ``roots`` Set-Names and ``binary`` binary operations needs
+    # exactly binary + roots operands. Required atom cubes can supply those
+    # operands; any shortfall must come from Permitted/Resource cubes.
+    return binary + unary + max(atoms, binary + roots)
+
+
+def _minimum_restriction_cost(state: GameState, relation_count: int) -> int:
+    required_set_symbols = state.required.without({"c", "="})
+    return relation_count + _minimum_set_name_cost(
+        required_set_symbols,
+        roots=relation_count + 1,
+    )
+
+
 def _wild_location(state: GameState) -> tuple[str, str, int] | None:
     config = state.variations
     if Variation.WILD_CUBE not in config.active or not config.wild_cube:
@@ -126,6 +147,79 @@ def _wild_is_available(state: GameState) -> bool:
     if section == "resources" and state.situation is Situation.FORCEOUT:
         return False
     return section in {"required", "permitted", "resources"}
+
+
+def _symbol_counts_can_match(
+    symbols: tuple[str, ...],
+    state: GameState,
+    required: CubeInventory,
+) -> bool:
+    """Fast inventory feasibility check used before the full cube assignment.
+
+    The definitive check remains :func:`match_cube_use`. This helper groups the
+    two interchangeable symbol pairs and accounts for MOPS and a fixed Wild
+    interpretation without constructing the assignment product.
+    """
+
+    available, _ = _inventory_for_situation(state)
+    available_counts = available.as_dict()
+    required_counts = required.as_dict()
+    written = Counter(symbols)
+    active = state.variations.active
+
+    families: list[tuple[str, ...]] = []
+    grouped: set[str] = set()
+    if Variation.UNION_INTERSECTION_INTERCHANGEABLE in active:
+        families.append(("u", "n"))
+        grouped.update(("u", "n"))
+    if Variation.UNIVERSE_NULL_INTERCHANGEABLE in active:
+        families.append(("V", "Z"))
+        grouped.update(("V", "Z"))
+    families.extend((symbol,) for symbol in SET_SYMBOLS + SET_OPERATIONS + ("c", "=") if symbol not in grouped)
+
+    wild_location = _wild_location(state)
+    wild_available = _wild_is_available(state)
+    wild_section = wild_location[0] if wild_location else None
+    wild_face = wild_location[1] if wild_location else None
+    wild_as = state.variations.wild_as
+    if wild_available and wild_face:
+        available_counts[wild_face] = available_counts.get(wild_face, 0) - 1
+        if wild_section == "required":
+            required_counts[wild_face] = required_counts.get(wild_face, 0) - 1
+
+    wild_choices = (False,)
+    if wild_available and wild_as:
+        wild_choices = (True,) if wild_section == "required" else (False, True)
+
+    multiple_operations = Variation.MULTIPLE_OPERATIONS in active
+    for use_wild in wild_choices:
+        legal = True
+        for family in families:
+            occurrences = sum(written[symbol] for symbol in family)
+            if use_wild and wild_as in family:
+                occurrences -= 1
+            required_occurrences = sum(max(0, required_counts.get(symbol, 0)) for symbol in family)
+            available_occurrences = sum(max(0, available_counts.get(symbol, 0)) for symbol in family)
+            is_operation_family = all(symbol in SET_OPERATIONS for symbol in family)
+            if occurrences < required_occurrences:
+                legal = False
+                break
+            if multiple_operations and is_operation_family:
+                if occurrences and available_occurrences < 1:
+                    legal = False
+                    break
+            elif occurrences > available_occurrences:
+                legal = False
+                break
+        if not legal:
+            continue
+        if use_wild and not any(
+            wild_as in family and any(written[symbol] for symbol in family)
+            for family in families
+        ):
+            continue
+        return True
+    return False
 
 
 def _source_options(math_symbol: str, state: GameState, wild_as: str | None) -> tuple[str, ...]:
@@ -403,10 +497,174 @@ def _two_operations_satisfied(candidate: _Candidate, state: GameState) -> bool:
     return sum(symbol in SET_OPERATIONS for symbol in candidate.symbols) >= 2
 
 
+def _canonical_chain_candidates(
+    state: GameState,
+    relation_symbols: tuple[str, ...],
+    deadline: float,
+    max_cost: int,
+    min_relations: int,
+    max_relations: int,
+) -> tuple[_RestrictionCandidate, ...]:
+    """Generate deep legal chains without a Cartesian product of every side.
+
+    Multiple Required relation cubes commonly appear as identity links followed
+    by one substantive link, for example ``R = R = R ⊂ expression``. Keeping
+    the repeated side atomic lets the remaining side carry the Required
+    operation cubes and reaches long official-style statements efficiently.
+    """
+
+    catalog_state = state
+    if (
+        _wild_is_available(state)
+        and state.variations.wild_cube
+        and state.variations.wild_as is None
+    ):
+        # A declared Wild cube is allowed to retain its shown face. Search that
+        # ordinary interpretation first; broader Wild meanings remain available
+        # to the fallback search.
+        catalog_state = replace(
+            state,
+            variations=replace(state.variations, wild_as=state.variations.wild_cube),
+        )
+
+    largest_complex_side = max_cost - (2 * min_relations)
+    if largest_complex_side < 1:
+        return ()
+    catalog = _catalog(
+        state.universe,
+        catalog_state,
+        largest_complex_side,
+        deadline,
+        per_key=1,
+    )
+    anchors = catalog[1]
+    found: dict[
+        tuple[tuple[str, ...], tuple[tuple[str, int], ...], str | None],
+        _RestrictionCandidate,
+    ] = {}
+    preferred_limit = 128
+    required_relations = Counter({
+        symbol: state.required.count(symbol)
+        for symbol in ("c", "=")
+    })
+
+    def operation_profile(symbols: tuple[str, ...]) -> tuple[int, int, int]:
+        counts = Counter(symbols)
+        return (counts["u"] + counts["n"], counts["-"], counts["'"])
+
+    required_operation_profile = operation_profile(
+        tuple(
+            symbol
+            for symbol in SET_OPERATIONS
+            for _ in range(state.required.count(symbol))
+        )
+    )
+
+    for relation_count in range(min_relations, max_relations + 1):
+        minimum_cost = _minimum_restriction_cost(state, relation_count)
+        largest_side = max_cost - (2 * relation_count)
+        if minimum_cost > max_cost or largest_side < 1:
+            continue
+        operator_sequences = sorted(
+            set(product(relation_symbols, repeat=relation_count)),
+            key=lambda operators: (tuple(operator == "c" for operator in operators), operators),
+        )
+        for total_cost in range(minimum_cost, max_cost + 1):
+            complex_cost = total_cost - (2 * relation_count)
+            if not 1 <= complex_cost <= largest_side:
+                continue
+            for operators in operator_sequences:
+                operator_counts = Counter(operators)
+                if relation_count == sum(required_relations.values()) and any(
+                    operator_counts[symbol] != required_relations[symbol]
+                    for symbol in ("c", "=")
+                ):
+                    continue
+                for anchor in anchors:
+                    for complex_side in catalog[complex_cost]:
+                        if (
+                            total_cost == minimum_cost
+                            and operation_profile(complex_side.symbols)
+                            != required_operation_profile
+                        ):
+                            continue
+                        for sides in (
+                            (anchor,) * relation_count + (complex_side,),
+                            (complex_side,) + (anchor,) * relation_count,
+                        ):
+                            symbols_list = list(sides[0].symbols)
+                            for index, operator in enumerate(operators):
+                                symbols_list.append(operator)
+                                symbols_list.extend(sides[index + 1].symbols)
+                            symbols = tuple(symbols_list)
+                            if not _symbol_counts_can_match(
+                                symbols,
+                                catalog_state,
+                                state.required,
+                            ):
+                                continue
+                            cube_use = match_cube_use(
+                                symbols,
+                                catalog_state,
+                                state.required,
+                            )
+                            if cube_use is None:
+                                continue
+                            restriction = Restriction(tuple(
+                                RestrictionLink(
+                                    sides[index].expression,
+                                    operator,
+                                    sides[index + 1].expression,
+                                )
+                                for index, operator in enumerate(operators)
+                            ))
+                            applied = apply_restriction(
+                                restriction,
+                                state.universe,
+                                state.variations,
+                            )
+                            if Variation.NO_NULL in state.variations.active and not any(
+                                count > 0 for count in applied.link_removals
+                            ):
+                                continue
+                            key = (
+                                applied.remaining_cards,
+                                cube_use.physical.items,
+                                cube_use.wild_cube_as,
+                            )
+                            candidate = _RestrictionCandidate(
+                                (restriction,),
+                                applied.remaining_cards,
+                                cube_use,
+                            )
+                            previous = found.get(key)
+                            if previous is None or (
+                                len(candidate.symbols),
+                                candidate.display,
+                            ) < (
+                                len(previous.symbols),
+                                previous.display,
+                            ):
+                                found[key] = candidate
+                                if len(found) >= preferred_limit:
+                                    return tuple(sorted(
+                                        found.values(),
+                                        key=lambda item: (len(item.symbols), item.display),
+                                    ))
+                            if monotonic() > deadline:
+                                raise SearchTimedOut
+    return tuple(sorted(
+        found.values(),
+        key=lambda item: (len(item.symbols), item.display),
+    ))
+
+
 def _restriction_candidates(
     state: GameState,
     deadline: float,
     max_cost: int,
+    *,
+    canonical_only: bool = False,
 ) -> tuple[tuple[_RestrictionCandidate, ...], tuple[Restriction, ...]]:
     available, _ = _inventory_for_situation(state)
     relation_symbols = tuple(
@@ -447,7 +705,10 @@ def _restriction_candidates(
                 if len(restriction.written_symbols()) <= max_cost:
                     simple_pool.setdefault(restriction.display(), restriction)
 
-    found: dict[tuple[tuple[str, ...], tuple[tuple[str, int], ...]], _RestrictionCandidate] = {}
+    found: dict[
+        tuple[tuple[str, ...], tuple[tuple[str, int], ...], str | None],
+        _RestrictionCandidate,
+    ] = {}
     relation_capacity = sum(available.count(symbol) for symbol in ("c", "="))
     if (
         _wild_is_available(state)
@@ -458,6 +719,26 @@ def _restriction_candidates(
     max_relations = min(3, relation_capacity)
     required_relations = sum(state.required.count(symbol) for symbol in ("c", "="))
     min_relations = max(1, required_relations)
+    for candidate in _canonical_chain_candidates(
+        state,
+        relation_symbols,
+        deadline,
+        max_cost,
+        min_relations,
+        max_relations,
+    ):
+        found[(
+            candidate.remaining,
+            candidate.cube_use.physical.items,
+            candidate.cube_use.wild_cube_as,
+        )] = candidate
+    if canonical_only and found:
+        candidates = tuple(sorted(
+            found.values(),
+            key=lambda item: (len(item.symbols), item.display),
+        ))
+        simple = tuple(simple_pool[key] for key in sorted(simple_pool))
+        return candidates, simple
     for relation_count in range(min_relations, max_relations + 1):
         if relation_count > 1:
             chain_sides = [candidate for candidate in sides if len(candidate.symbols) == 1]
@@ -483,7 +764,11 @@ def _restriction_candidates(
                     count > 0 for count in applied.link_removals
                 ):
                     continue
-                key = (applied.remaining_cards, cube_use.physical.items)
+                key = (
+                    applied.remaining_cards,
+                    cube_use.physical.items,
+                    cube_use.wild_cube_as,
+                )
                 candidate = _RestrictionCandidate((restriction,), applied.remaining_cards, cube_use)
                 previous = found.get(key)
                 if previous is None or len(symbols) < len(previous.symbols):
@@ -559,9 +844,46 @@ def _answers_for_universe(
     max_cost: int,
     *,
     restriction: _RestrictionCandidate | None = None,
+    catalog_cache: dict[
+        tuple[VariationConfig, int],
+        tuple[tuple[_Candidate, ...], ...],
+    ] | None = None,
+    cube_use_cache: dict[
+        tuple[VariationConfig, tuple[str, ...], CubeInventory],
+        CubeUse | None,
+    ] | None = None,
 ) -> list[SolverAnswer]:
     answers: list[SolverAnswer] = []
-    catalog = _catalog(active_universe, state, max_cost, deadline, per_key=1)
+    matching_state = state
+    if (
+        restriction
+        and restriction.cube_use.wild_cube_used
+        and not state.variations.wild_as
+    ):
+        matching_state = replace(
+            state,
+            variations=replace(
+                state.variations,
+                wild_as=restriction.cube_use.wild_cube_as,
+            ),
+        )
+    catalog_key = (matching_state.variations, max_cost)
+    catalog = catalog_cache.get(catalog_key) if catalog_cache is not None else None
+    if catalog is None:
+        # Set expressions commute with restricting the Universe: evaluate once
+        # on the original cards, then project each result onto the active cards.
+        # This avoids rebuilding the same expression catalog for every candidate
+        # Restriction.
+        catalog = _catalog(
+            state.universe,
+            matching_state,
+            max_cost,
+            deadline,
+            per_key=1,
+        )
+        if catalog_cache is not None:
+            catalog_cache[catalog_key] = catalog
+    active_ids = frozenset(active_universe.ids)
     for level in catalog[1:]:
         for candidate in level:
             if monotonic() > deadline:
@@ -570,30 +892,24 @@ def _answers_for_universe(
                 continue
             if restriction is None and len(candidate.symbols) < 2:
                 continue
-            matching_state = state
-            if (
-                restriction
-                and restriction.cube_use.wild_cube_used
-                and not state.variations.wild_as
-            ):
-                matching_state = replace(
-                    state,
-                    variations=replace(
-                        state.variations,
-                        wild_as=restriction.cube_use.wild_cube_as,
-                    ),
-                )
-            cube_use = match_cube_use(candidate.symbols, matching_state, required)
+            use_key = (matching_state.variations, candidate.symbols, required)
+            if cube_use_cache is not None and use_key in cube_use_cache:
+                cube_use = cube_use_cache[use_key]
+            else:
+                cube_use = match_cube_use(candidate.symbols, matching_state, required)
+                if cube_use_cache is not None:
+                    cube_use_cache[use_key] = cube_use
             if cube_use is None:
                 continue
             if restriction and not combined_resource_use_is_legal(
                 restriction.cube_use, cube_use, state
             ):
                 continue
-            value = _goal_value(candidate.cards, state, doubled)
+            projected_cards = candidate.cards & active_ids
+            value = _goal_value(projected_cards, state, doubled)
             if value != state.goal:
                 continue
-            cards = tuple(card_id for card_id in active_universe.ids if card_id in candidate.cards)
+            cards = tuple(card_id for card_id in active_universe.ids if card_id in projected_cards)
             if not card_constraints_satisfied(cards, active_universe, state.variations):
                 continue
             _, steps = evaluate(candidate.expression, active_universe, state.variations)
@@ -802,28 +1118,37 @@ def solve(
     if state.situation is Situation.FORCEOUT and state.resources.total:
         warnings.append("Forceout has no Resource cubes; the entered Resources were ignored.")
 
-    available, _ = _inventory_for_situation(state)
+    mandatory_restriction = state.required.count("c") + state.required.count("=") > 0
     if max_solution_cubes is None:
-        required_set_name = _required_for_set_name(state, has_restriction=False)
-        baseline = required_set_name.total
-        required_binary_operations = sum(
-            required_set_name.count(symbol) for symbol in ("u", "n", "-")
+        required_set_name = _required_for_set_name(
+            state,
+            has_restriction=mandatory_restriction,
         )
-        required_atoms = sum(
-            required_set_name.count(symbol) for symbol in SET_SYMBOLS
+        minimum_well_formed = _minimum_set_name_cost(required_set_name)
+        max_solution_cubes = min(
+            12,
+            max(6, required_set_name.total + 4, minimum_well_formed),
         )
-        minimum_well_formed = baseline + max(
-            0,
-            required_binary_operations + 1 - required_atoms,
-        )
-        max_solution_cubes = min(10, max(6, baseline + 4, minimum_well_formed))
     if max_restriction_cubes is None:
-        max_restriction_cubes = min(9, max(5, state.required.total + 3))
+        required_relations = sum(state.required.count(symbol) for symbol in ("c", "="))
+        relation_count = max(1, required_relations)
+        minimum_well_formed = _minimum_restriction_cost(state, relation_count)
+        max_restriction_cubes = min(
+            17,
+            max(5, state.required.total + 3, minimum_well_formed),
+        )
 
     doubled = double_set_cards(state.universe, state.variations)
     answers: list[SolverAnswer] = []
+    catalog_cache: dict[
+        tuple[VariationConfig, int],
+        tuple[tuple[_Candidate, ...], ...],
+    ] = {}
+    cube_use_cache: dict[
+        tuple[VariationConfig, tuple[str, ...], CubeInventory],
+        CubeUse | None,
+    ] = {}
     timed_out = False
-    mandatory_restriction = state.required.count("c") + state.required.count("=") > 0
     try:
         if not mandatory_restriction:
             required = _required_for_set_name(state, has_restriction=False)
@@ -835,6 +1160,8 @@ def solve(
                     doubled,
                     deadline,
                     max_solution_cubes,
+                    catalog_cache=catalog_cache,
+                    cube_use_cache=cube_use_cache,
                 )
             )
 
@@ -845,10 +1172,41 @@ def solve(
                 state,
                 deadline,
                 max_restriction_cubes,
+                canonical_only=True,
             )
+            restrictions = tuple(sorted(
+                restrictions,
+                key=lambda restriction: (
+                    not card_constraints_satisfied(
+                        restriction.remaining,
+                        state.universe.restrict_to(restriction.remaining),
+                        state.variations,
+                    ),
+                    abs(
+                        _goal_value(
+                            frozenset(restriction.remaining),
+                            state,
+                            doubled,
+                        )
+                        - state.goal
+                    ),
+                    len(restriction.symbols),
+                    restriction.display,
+                ),
+            ))
+            searched_restrictions: set[
+                tuple[str, tuple[str, ...], tuple[tuple[str, int], ...], str | None]
+            ] = set()
             for restriction in restrictions:
                 if monotonic() > deadline:
                     raise SearchTimedOut
+                search_key = (
+                    restriction.display,
+                    restriction.remaining,
+                    restriction.cube_use.physical.items,
+                    restriction.cube_use.wild_cube_as,
+                )
+                searched_restrictions.add(search_key)
                 active = state.universe.restrict_to(restriction.remaining)
                 required = _required_for_set_name(state, has_restriction=True)
                 answers.extend(
@@ -860,8 +1218,73 @@ def solve(
                         deadline,
                         max_solution_cubes,
                         restriction=restriction,
+                        catalog_cache=catalog_cache,
+                        cube_use_cache=cube_use_cache,
                     )
                 )
+                if len(answers) >= requested:
+                    break
+
+            # If the fast canonical chain shape did not fill the request, use
+            # the broader side/chain catalog with the remaining time budget.
+            if len(answers) < requested:
+                fallback_restrictions, fallback_simple = _restriction_candidates(
+                    state,
+                    deadline,
+                    max_restriction_cubes,
+                )
+                fallback_restrictions = tuple(sorted(
+                    fallback_restrictions,
+                    key=lambda restriction: (
+                        not card_constraints_satisfied(
+                            restriction.remaining,
+                            state.universe.restrict_to(restriction.remaining),
+                            state.variations,
+                        ),
+                        abs(
+                            _goal_value(
+                                frozenset(restriction.remaining),
+                                state,
+                                doubled,
+                            )
+                            - state.goal
+                        ),
+                        len(restriction.symbols),
+                        restriction.display,
+                    ),
+                ))
+                simple_restrictions = tuple(dict.fromkeys(
+                    simple_restrictions + fallback_simple
+                ))
+                for restriction in fallback_restrictions:
+                    if monotonic() > deadline:
+                        raise SearchTimedOut
+                    search_key = (
+                        restriction.display,
+                        restriction.remaining,
+                        restriction.cube_use.physical.items,
+                        restriction.cube_use.wild_cube_as,
+                    )
+                    if search_key in searched_restrictions:
+                        continue
+                    searched_restrictions.add(search_key)
+                    active = state.universe.restrict_to(restriction.remaining)
+                    required = _required_for_set_name(state, has_restriction=True)
+                    answers.extend(
+                        _answers_for_universe(
+                            state,
+                            active,
+                            required,
+                            doubled,
+                            deadline,
+                            max_solution_cubes,
+                            restriction=restriction,
+                            catalog_cache=catalog_cache,
+                            cube_use_cache=cube_use_cache,
+                        )
+                    )
+                    if len(answers) >= requested:
+                        break
 
             # Independent statements are deliberately a reserve strategy. They
             # are only explored when solution-only and regular/chain searches
@@ -887,6 +1310,8 @@ def solve(
                             deadline,
                             max_solution_cubes,
                             restriction=restriction,
+                            catalog_cache=catalog_cache,
+                            cube_use_cache=cube_use_cache,
                         )
                     )
     except SearchTimedOut:
