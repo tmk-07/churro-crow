@@ -343,6 +343,7 @@ def _catalog(
     """Generate expressions by cube count, deduplicating semantic/inventory twins."""
 
     atoms, operations = _written_symbols_available(state)
+    universe_cards = frozenset(universe.ids)
     by_cost: list[list[_Candidate]] = [[] for _ in range(max_cost + 1)]
     seen_by_cost: list[dict[tuple[frozenset[str], tuple[str, ...]], int]] = [
         {} for _ in range(max_cost + 1)
@@ -367,7 +368,7 @@ def _catalog(
         if "'" in operations:
             for child in by_cost[cost - 1]:
                 expression = Expr.complement(child.expression)
-                cards, _ = evaluate(expression, universe, state.variations)
+                cards = universe_cards - child.cards
                 add(cost, expression, cards)
         for operation in (symbol for symbol in operations if symbol != "'"):
             for left_cost in range(1, cost - 1):
@@ -379,7 +380,14 @@ def _catalog(
                         if monotonic() > deadline:
                             raise SearchTimedOut
                         expression = Expr.binary(operation, left.expression, right.expression)
-                        cards, _ = evaluate(expression, universe, state.variations)
+                        if operation == "u":
+                            cards = left.cards | right.cards
+                        elif operation == "n":
+                            cards = left.cards & right.cards
+                        elif Variation.SYMMETRIC_DIFFERENCE in state.variations.active:
+                            cards = left.cards ^ right.cards
+                        else:
+                            cards = left.cards - right.cards
                         add(cost, expression, cards)
         by_cost[cost].sort(key=lambda candidate: candidate.display)
     return tuple(tuple(level) for level in by_cost)
