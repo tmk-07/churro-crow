@@ -16,6 +16,7 @@ from onsets_engine import (
     apply_restrictions,
     check_expression,
     combined_resource_use_is_legal,
+    double_set_cards,
     evaluate,
     enumerate_evaluations,
     enumerate_restriction_sets,
@@ -522,6 +523,13 @@ class SolverTests(unittest.TestCase):
         report = solve(state, requested=5, time_limit_seconds=15)
         self.assertEqual(report.returned, 5)
         self.assertTrue(report.search_complete)
+        expected_doubled = double_set_cards(universe, variations)
+        for group in report.groups:
+            for answer in group.answers:
+                self.assertEqual(
+                    set(answer.doubled_cards),
+                    set(answer.cards) & expected_doubled,
+                )
 
     def test_golden_problem_two_long_chain_and_wild_face_search(self):
         universe = Universe.from_ids(

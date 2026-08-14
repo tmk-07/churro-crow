@@ -297,27 +297,32 @@ def solve_page() -> None:
         return
 
     for group_index, group in enumerate(report.groups, 1):
-        st.markdown(f"<div class='cc-cardset'><strong>Card set {group_index}</strong><br>{cards_text(group.cards)}<br>Goal value: {group.value}</div>", unsafe_allow_html=True)
-        for answer_index, answer in enumerate(group.answers, 1):
-            with st.container(border=True):
-                st.write(f"**Solution {answer_index} for this card set**")
-                if answer.restriction:
-                    st.write("Restriction")
-                    st.code(answer.restriction)
-                st.write("Set-Name")
-                st.code(answer.solution)
-                use_cols = st.columns(3)
-                use_cols[0].write(f"Written cubes: {display_cube_inventory(answer.cube_use.written.items)}")
-                use_cols[1].write(f"Physical cubes: {display_cube_inventory(answer.cube_use.physical.items)}")
-                use_cols[2].write(
-                    "Resource cubes used: "
-                    f"{display_cube_inventory(answer.resource_inventory.items)}"
-                )
-                if answer.variation_notes:
-                    st.caption(" · ".join(answer.variation_notes))
-                with st.expander("Evaluation steps"):
-                    for step in answer.steps:
-                        st.write(f"`{step.expression}` — {step.explanation} {cards_text(step.cards)}")
+        doubled_cards = frozenset(group.answers[0].doubled_cards)
+        group_cards = cards_text(group.cards, doubled_cards)
+        group_label = f"Card set {group_index} · {group_cards} · Goal value: {group.value}"
+        with st.expander(group_label, expanded=group_index == 1):
+            if doubled_cards:
+                st.caption("Cards marked (2) count twice under Double Set.")
+            for answer_index, answer in enumerate(group.answers, 1):
+                with st.container(border=True):
+                    st.write(f"**Solution {answer_index} for this card set**")
+                    if answer.restriction:
+                        st.write("Restriction")
+                        st.code(answer.restriction)
+                    st.write("Set-Name")
+                    st.code(answer.solution)
+                    use_cols = st.columns(3)
+                    use_cols[0].write(f"Written cubes: {display_cube_inventory(answer.cube_use.written.items)}")
+                    use_cols[1].write(f"Physical cubes: {display_cube_inventory(answer.cube_use.physical.items)}")
+                    use_cols[2].write(
+                        "Resource cubes used: "
+                        f"{display_cube_inventory(answer.resource_inventory.items)}"
+                    )
+                    if answer.variation_notes:
+                        st.caption(" · ".join(answer.variation_notes))
+                    with st.popover("Evaluation steps"):
+                        for step in answer.steps:
+                            st.write(f"`{step.expression}` — {step.explanation} {cards_text(step.cards)}")
 
     def request_more() -> None:
         st.session_state["solve_requested"] = min(

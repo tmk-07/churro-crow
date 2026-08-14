@@ -1,7 +1,14 @@
 """Public API for the Churro Crow On-Sets engine."""
 
 from .checker import check_expression
-from .expressions import Expr, enumerate_evaluations, evaluate, parse_interpretations, weighted_value
+from .expressions import (
+    Expr,
+    double_set_cards,
+    enumerate_evaluations,
+    evaluate,
+    parse_interpretations,
+    weighted_value,
+)
 from .models import (
     CARD_ORDER,
     RULESET_ID,

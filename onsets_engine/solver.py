@@ -929,6 +929,11 @@ def _answers_for_universe(
                     restriction_cube_use=restriction.cube_use if restriction else None,
                     variation_notes=tuple(dict.fromkeys(notes)),
                     steps=steps,
+                    doubled_cards=tuple(
+                        card_id
+                        for card_id in active_universe.ids
+                        if card_id in projected_cards and card_id in doubled
+                    ),
                 )
             )
     return answers

@@ -264,6 +264,7 @@ class SolverAnswer:
     restriction_cube_use: CubeUse | None = None
     variation_notes: tuple[str, ...] = ()
     steps: tuple[EvaluationStep, ...] = ()
+    doubled_cards: tuple[str, ...] = ()
 
     @property
     def cube_count(self) -> int:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Mapping
+from typing import AbstractSet, Mapping
 
 import streamlit as st
 
@@ -294,5 +294,13 @@ def variation_controls(
     return universe, config, tuple(issue.message for issue in issues)
 
 
-def cards_text(cards: tuple[str, ...]) -> str:
-    return " · ".join(cards) if cards else "no cards"
+def cards_text(
+    cards: tuple[str, ...],
+    doubled_cards: AbstractSet[str] = frozenset(),
+) -> str:
+    if not cards:
+        return "no cards"
+    return " · ".join(
+        f"{card} (2)" if card in doubled_cards else card
+        for card in cards
+    )

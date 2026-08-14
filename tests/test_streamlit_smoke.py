@@ -5,6 +5,9 @@ try:
 except ModuleNotFoundError:  # Keeps core tests runnable without UI dependencies.
     AppTest = None
 
+if AppTest is not None:
+    from ui_shared import cards_text
+
 
 @unittest.skipIf(AppTest is None, "Streamlit is not installed in this environment")
 class StreamlitSmokeTests(unittest.TestCase):
@@ -99,9 +102,19 @@ class StreamlitSmokeTests(unittest.TestCase):
         metrics = {item.label: item.value for item in app.metric}
         self.assertGreater(int(metrics["Unique solutions"]), 0)
         self.assertGreater(int(metrics["Written variations"]), 0)
+        card_set_expanders = [
+            item.label for item in app.expander if item.label.startswith("Card set ")
+        ]
+        self.assertGreater(len(card_set_expanders), 0)
         for expression in (item.value for item in app.code):
             if "⊂" not in expression and "=" not in expression:
                 self.assertTrue(expression.startswith("(") or expression.endswith("'"))
+
+    def test_double_set_cards_are_annotated(self):
+        self.assertEqual(
+            cards_text(("BR", "GY", "RY"), frozenset({"BR", "RY"})),
+            "BR (2) · GY · RY (2)",
+        )
 
 
 if __name__ == "__main__":
