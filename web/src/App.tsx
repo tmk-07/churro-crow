@@ -24,15 +24,15 @@ const navItems: Array<[Page, string]> = [
 export default function App() {
   const [page, setPage] = useState<Page>(pageFromHash());
   const [config, setConfig] = useState<ApiConfig>(FALLBACK_CONFIG);
-  const [apiReady, setApiReady] = useState(true);
+  const [engineReady, setEngineReady] = useState<boolean | null>(null);
 
   useEffect(() => {
     const syncPage = () => setPage(pageFromHash());
     window.addEventListener("hashchange", syncPage);
     getConfig().then((next) => {
       setConfig(next);
-      setApiReady(true);
-    }).catch(() => setApiReady(false));
+      setEngineReady(true);
+    }).catch(() => setEngineReady(false));
     return () => window.removeEventListener("hashchange", syncPage);
   }, []);
 
@@ -54,14 +54,14 @@ export default function App() {
             <button className={page === target ? "active" : ""} onClick={() => navigate(target)} key={target}>{label}</button>
           ))}
         </nav>
-        <span className={`api-status ${apiReady ? "online" : "offline"}`}>
-          <i />{apiReady ? "Engine online" : "API pending"}
+        <span className={`api-status ${engineReady === true ? "online" : engineReady === false ? "offline" : ""}`}>
+          <i />{engineReady === true ? "Engine ready" : engineReady === false ? "Engine unavailable" : "Loading engine…"}
         </span>
       </header>
 
-      {!apiReady && (
+      {engineReady === false && (
         <div className="migration-banner">
-          The new interface is ready, but calculations stay on the Streamlit fallback until the API host is enabled.{" "}
+          The free browser calculation engine could not start. Check your connection, reload this page, or use the fallback.{" "}
           <a href="https://churro-crow-oscalc.streamlit.app/" target="_blank" rel="noreferrer">Open the working calculator</a>
         </div>
       )}

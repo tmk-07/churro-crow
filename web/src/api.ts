@@ -1,16 +1,10 @@
 import type { ApiConfig, ApiErrorShape, CheckResponse, SolveResponse } from "./types";
+import { browserRequest } from "./browserEngine";
+import { ApiError } from "./apiError";
+export { ApiError };
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-
-export class ApiError extends Error {
-  issues: string[];
-
-  constructor(message: string, issues: string[] = []) {
-    super(message);
-    this.name = "ApiError";
-    this.issues = issues;
-  }
-}
+const USE_HTTP_API = Boolean(API_BASE);
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
@@ -30,12 +24,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export const getConfig = () => request<ApiConfig>("/api/config");
-export const checkExpression = (payload: unknown) => request<CheckResponse>("/api/check", {
-  method: "POST",
-  body: JSON.stringify(payload),
-});
-export const solveShake = (payload: unknown) => request<SolveResponse>("/api/solve", {
-  method: "POST",
-  body: JSON.stringify(payload),
-});
+export const getConfig = () => USE_HTTP_API
+  ? request<ApiConfig>("/api/config")
+  : browserRequest<ApiConfig>("config");
+
+export const checkExpression = (payload: unknown) => USE_HTTP_API
+  ? request<CheckResponse>("/api/check", { method: "POST", body: JSON.stringify(payload) })
+  : browserRequest<CheckResponse>("check", payload);
+
+export const solveShake = (payload: unknown) => USE_HTTP_API
+  ? request<SolveResponse>("/api/solve", { method: "POST", body: JSON.stringify(payload) })
+  : browserRequest<SolveResponse>("solve", payload);

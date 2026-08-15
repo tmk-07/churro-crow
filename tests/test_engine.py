@@ -462,7 +462,7 @@ class SolverTests(unittest.TestCase):
         universe = Universe.from_ids(
             card_id
             for card_id in Universe.full().ids
-            if card_id not in {"BR", "BRY", "BGY", "BG", "RG", "RY"}
+            if card_id not in {"BR", "BRY", "BRGY", "BGY", "BG", "RG", "RY"}
         )
         variations = VariationConfig(
             active=AUTOMATIC_VARIATIONS[Division.SENIOR]
